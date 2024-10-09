@@ -115,12 +115,14 @@ const captureTransaction = async (data, ipn_Payload) => {
     throw Error(`Payment amount not matched => ${data?.amount}`);
   }
 
-  const user = JSON.parse(JSON.stringify(payment?.customer));
+  const user = payment?.customer
+    ? JSON.parse(JSON.stringify(payment?.customer))
+    : null;
 
   const activeBillingAddress = await Billing.findById(
     user?.activeBillingAddress
   ).session(session);
-  
+
   if (!activeBillingAddress) {
     throw Error(`Active billing address not found`);
   }

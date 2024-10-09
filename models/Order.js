@@ -42,7 +42,9 @@ const pricingProductSchema = {
     validate: [
       {
         validator: function (val) {
-          return val < this?.productSnapshot?.pricing?.salePrice;
+          return this?.productSnapshot?.pricing?.salePrice
+            ? this?.productSnapshot?.pricing?.salePrice > val
+            : true;
         },
         message: "Discount cannot be greater than or equal to sale price.",
       },
@@ -96,7 +98,9 @@ const pricingVariantSchema = {
     validate: [
       {
         validator: function (val) {
-          return val < this?.variantSnapshot?.pricing?.salePrice;
+          return this?.variantSnapshot?.pricing?.salePrice
+            ? this?.variantSnapshot?.pricing?.salePrice > val
+            : true;
         },
         message: "Discount cannot be greater than or equal to sale price.",
       },

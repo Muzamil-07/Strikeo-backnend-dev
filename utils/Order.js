@@ -107,7 +107,9 @@ const handleTransactionProcessNotify = async (ipn_Payload = {}) => {
     //   return;
     // }
 
-    const user = JSON.parse(JSON.stringify(sslczPayment?.customer));
+    const user = sslczPayment?.customer
+      ? JSON.parse(JSON.stringify(sslczPayment?.customer))
+      : null;
 
     // if (!user || !user.email) {
     //   // User not found notification
