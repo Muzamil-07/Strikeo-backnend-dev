@@ -116,14 +116,11 @@ const captureTransaction = async (data, ipn_Payload) => {
   }
 
   const user = JSON.parse(JSON.stringify(payment?.customer));
-  console.log("----------------------", {
-    owner: getProductId(user),
-    customer: payment.customer,
-  });
 
-  const activeBillingAddress = await Billing.findOne(
+  const activeBillingAddress = await Billing.findById(
     user?.activeBillingAddress
   ).session(session);
+  
   if (!activeBillingAddress) {
     throw Error(`Active billing address not found`);
   }
