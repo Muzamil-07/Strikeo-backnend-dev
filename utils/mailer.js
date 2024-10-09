@@ -223,7 +223,7 @@ const sslczNotification = async (content, userEmail) => {
       if (err) {
         console.log(err);
       } else {
-        console.log("SSLCommerz Transaction Email sent", info);
+        console.log("SSLCommerz Transaction Email sent");
       }
     });
   } catch (error) {

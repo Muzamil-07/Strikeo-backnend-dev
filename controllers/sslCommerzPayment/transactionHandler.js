@@ -116,6 +116,10 @@ const captureTransaction = async (data, ipn_Payload) => {
   }
 
   const user = JSON.parse(JSON.stringify(payment?.customer));
+  console.log("----------------------", {
+    owner: getProductId(user),
+    customer: payment.customer,
+  });
 
   const activeBillingAddress = await Billing.findOne(
     user?.activeBillingAddress
@@ -123,7 +127,6 @@ const captureTransaction = async (data, ipn_Payload) => {
   if (!activeBillingAddress) {
     throw Error(`Active billing address not found`);
   }
-  console.log("----------------------", { owner: getProductId(user) });
   const cart = await Cart.findOne({ owner: getProductId(user) }).session(
     session
   );
