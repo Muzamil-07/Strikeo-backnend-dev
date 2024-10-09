@@ -1,6 +1,10 @@
 const Order = require("../models/Order"); // Adjust the path as necessary
 const Payment = require("../models/Payment"); // Adjust the path as necessary
-const { confirmOrder, handleOrderErrorsAndNotify } = require("./mailer");
+const {
+  confirmOrder,
+  handleOrderErrorsAndNotify,
+  sslczNotification,
+} = require("./mailer");
 const { v4: uuidv4 } = require("uuid");
 const { default: mongoose } = require("mongoose");
 const { getProductId, getNumber } = require("./stringsNymber");
@@ -73,6 +77,98 @@ const handleOutOfStockAndNotify = async (email, removedMessages = []) => {
   // Check if there are messages to notify
   if (removedMessages.length > 0) {
     await handleOrderErrorsAndNotify(email, removedMessages); // Util function to send notifications
+  }
+};
+const handleTransactionProcessNotify = async (ipn_Payload = {}) => {
+  try {
+    const sslczPayment = await Payment.findOne({
+      paymentId: ipn_Payload?.tran_id,
+    });
+
+    // if (!sslczPayment) {
+    //   // Payment not found notification
+    //   await sslczNotification(
+    //     {
+    //       name: "Hi!",
+    //       intro: "We could not find your payment details.",
+    //       action: {
+    //         instructions: `It seems there was an issue locating your payment information. Please try again or contact us for further assistance.`,
+    //         button: {
+    //           color: "#3869D4",
+    //           text: "Contact Support",
+    //           link: `mailto:${process.env.SMTP_USER}`,
+    //         },
+    //       },
+    //       outro:
+    //         "Thank you for your patience, and please let us know if you need help.",
+    //     },
+    //     ipn_Payload?.email || process.env.SUPPORT_EMAIL // Use payload email or fallback to support email
+    //   );
+    //   return;
+    // }
+
+    const user = JSON.parse(JSON.stringify(sslczPayment?.customer));
+
+    // if (!user || !user.email) {
+    //   // User not found notification
+    //   await sslczNotification(
+    //     {
+    //       name: "Hi!",
+    //       intro: "We encountered an issue retrieving your account information.",
+    //       action: {
+    //         instructions: `We couldn't find your user details. Please reach out to us for assistance.`,
+    //         button: {
+    //           color: "#3869D4",
+    //           text: "Contact Support",
+    //           link: `mailto:${process.env.SMTP_USER}`,
+    //         },
+    //       },
+    //       outro:
+    //         "Thank you for your understanding, and we're happy to help with any questions.",
+    //     },
+    //     process.env.SUPPORT_EMAIL // Fallback to support email if user not found
+    //   );
+    //   return;
+    // }
+
+    // Standard payment issue notification
+    await sslczNotification(
+      {
+        name: `Hi!`,
+        intro: "We encountered an issue while processing your payment.",
+        action: {
+          instructions: `We were unable to place your order due to a payment issue. Please try again or contact us if the problem persists.`,
+          button: {
+            color: "#3869D4",
+            text: "Contact Support",
+            link: `mailto:${process.env.SMTP_USER}`,
+          },
+        },
+        outro: `Transaction ID: ${ipn_Payload?.tran_id || "N/A"}, Status: ${
+          ipn_Payload?.status || "N/A"
+        }`,
+      },
+      user?.email
+    );
+  } catch (error) {
+    console.error("Error in Transaction failed notify =>", error);
+    // // Optional: Send an error notification or log the issue for further investigation
+    // await sslczNotification(
+    //   {
+    //     name: "Hi!",
+    //     intro: "An unexpected error occurred while processing your request.",
+    //     action: {
+    //       instructions: `Please contact support if the issue persists.`,
+    //       button: {
+    //         color: "#3869D4",
+    //         text: "Contact Support",
+    //         link: `mailto:${process.env.SMTP_USER}`,
+    //       },
+    //     },
+    //     outro: "We apologize for the inconvenience caused.",
+    //   },
+    //   process.env.SUPPORT_EMAIL // Fallback to support email in case of errors
+    // );
   }
 };
 
@@ -229,9 +325,13 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
   }
 
   // Notify the customer
-  handleOutOfStockAndNotify(userEmail, removedMessages);
+  await handleOutOfStockAndNotify(userEmail, removedMessages);
 
   return validOrders; // Return the filtered array of valid orders
 };
 
-module.exports = { createSingleOrder, groupItemsByCompany };
+module.exports = {
+  createSingleOrder,
+  groupItemsByCompany,
+  handleTransactionProcessNotify,
+};

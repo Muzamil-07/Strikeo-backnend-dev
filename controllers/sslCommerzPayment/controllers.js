@@ -16,6 +16,8 @@ const { captureTransaction } = require("./transactionHandler.js");
 const { tranStatusFormat } = require("./initDataProcess.js");
 const Cart = require("../../models/Cart.js");
 const { cartFormatForSelectedItems } = require("../../utils/Cart.js");
+const { sslczNotification } = require("../../utils/mailer.js");
+const { handleTransactionProcessNotify } = require("../../utils/Order.js");
 // const dummyTranId = "SSLCZ_TEST_59bd349436a7k"; //change its last char if id already taken
 const getPaymentOrder = async (paymentId) => {
   return await Payment.findOne({ paymentId }).populate({
@@ -165,11 +167,13 @@ exports.ipn_listener = async (req, res, next) => {
       })
       .catch((error) => {
         console.log("Transaction capture failed => ", error);
-        return next(
-          new BadRequestResponse(
-            "Transaction capture failed: " + error?.message
-          )
-        );
+        handleTransactionProcessNotify(req.body).finally(() => {
+          return next(
+            new BadRequestResponse(
+              "Transaction capture failed: " + error?.message
+            )
+          );
+        });
       });
   } catch (validationError) {
     console.log("sslCommerz payload failed to validate => ", validationError);

@@ -605,24 +605,22 @@ const updateOrder = async (req, res, next) => {
 const getVendorStats = async (req, res, next) => {
   try {
     const { from, to } = req.query;
-    const userId = new mongoose.Types.ObjectId(req.user.company);
+    const userId = new mongoose.Types.ObjectId(req?.user?.company);
     const query = {
       isConfirmed: true,
-      "orders.company": userId,
+      company: userId,
       orderedAt: { $gte: new Date(from), $lte: new Date(to) },
     };
 
-    // Aggregate total orders, total revenue, total items sold, and customer count in one query
+    // Combine the summary, status counts, and date-wise order count in a single aggregation
     const summaryAggregation = await Order.aggregate([
       { $match: query },
-      { $unwind: "$orders" },
-      { $match: { "orders.company": userId } },
       {
         $group: {
           _id: null,
           totalOrders: { $sum: 1 },
-          totalVendorBill: { $sum: "$orders.vendorBill" },
-          totalItemsSold: { $sum: { $sum: "$orders.items.details.quantity" } },
+          totalVendorBill: { $sum: "$vendorBill" },
+          totalItemsSold: { $sum: { $sum: "$items.quantity" } },
           uniqueCustomers: { $addToSet: "$customer" },
         },
       },
@@ -640,37 +638,36 @@ const getVendorStats = async (req, res, next) => {
     const recentOrders = await Order.find(query)
       .sort({ orderedAt: -1 })
       .limit(5)
-      .populate("orders.items.product", "name")
+      .populate("items.product", "name variants")
       .select({
-        "orders.$": 1,
         orderNumber: 1,
         orderedAt: 1,
-      });
+        vendorBill: 1,
+        items: 1,
+      })
+      .lean(); // Use lean() for better performance
 
-    // Fetch hot selling products in one aggregation query
+    // Hot selling products
     const hotSellingProducts = await Order.aggregate([
       { $match: query },
-      { $unwind: "$orders" },
-      { $match: { "orders.company": userId } },
-      { $unwind: "$orders.items" },
+      { $unwind: "$items" },
       {
         $group: {
-          _id: "$orders.items.product",
-          totalQuantity: { $sum: "$orders.items.details.quantity" },
+          _id: "$items.product",
+          totalQuantity: { $sum: "$items.quantity" },
         },
       },
       { $sort: { totalQuantity: -1 } },
       { $limit: 3 },
     ]);
 
-    // Fetch product details in one query
     const productIds = hotSellingProducts.map(
       (product) => new mongoose.Types.ObjectId(product?._id)
     );
-    const productDetailsArray = await Product.find({
-      _id: { $in: productIds },
-    }).select("name inventory.stock images brand");
-    console.log(productDetailsArray);
+    const productDetailsArray = await Product.find({ _id: { $in: productIds } })
+      .select("name inventory.stock images brand")
+      .lean();
+
     const hotSellingProductDetails = hotSellingProducts.map((product) => {
       const productDetails = productDetailsArray.find(
         (pd) => String(pd._id) === String(product._id)
@@ -687,11 +684,10 @@ const getVendorStats = async (req, res, next) => {
     // Get status counts
     const getStatusCounts = await Order.aggregate([
       { $match: query },
-      { $unwind: "$orders" },
-      { $match: { "orders.company": userId } },
+      { $unwind: "$status" }, // Unwind to group by status
       {
         $group: {
-          _id: "$orders.status",
+          _id: "$status",
           count: { $sum: 1 },
         },
       },
@@ -705,8 +701,6 @@ const getVendorStats = async (req, res, next) => {
     // Get date-wise order count
     const getDateWiseOrderCount = await Order.aggregate([
       { $match: query },
-      { $unwind: "$orders" },
-      { $match: { "orders.company": userId } },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$orderedAt" } },

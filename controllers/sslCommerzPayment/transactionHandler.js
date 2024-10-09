@@ -123,8 +123,10 @@ const captureTransaction = async (data, ipn_Payload) => {
   if (!activeBillingAddress) {
     throw Error(`Active billing address not found`);
   }
-
-  const cart = await Cart.findOne({ owner: user.id }).session(session);
+  console.log("----------------------", { owner: getProductId(user) });
+  const cart = await Cart.findOne({ owner: getProductId(user) }).session(
+    session
+  );
   if (!cart) {
     throw Error(`Cart not found`);
   }
@@ -248,11 +250,10 @@ const captureTransaction = async (data, ipn_Payload) => {
     await cart.save();
 
     // Send email notification
-
-    sslczNotification(
+    await sslczNotification(
       {
         name: `Hi ${user?.firstName}`,
-        intro: `Your payment has been ${data?.email_status}!`,
+        intro: `Your payment has been ${data?.email_status} with (${completedOrders?.length}) orders!`,
         action: {
           instructions: "Please review your orders.",
           button: {

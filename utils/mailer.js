@@ -183,6 +183,10 @@ const confirmOrder = async (user, cart, userEmail) => {
 
 const sslczNotification = async (content, userEmail) => {
   try {
+    if (!userEmail) {
+      console.info("No target email found.");
+      return;
+    }
     const transporter = setTransporter();
 
     const mailGenerator = new Mailgen({
