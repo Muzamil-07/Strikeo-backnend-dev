@@ -412,7 +412,7 @@ const getRelatedProductsOnChecout = async (req, res, next) => {
   const productsIds = req.params.ids
     .split(",")
     .map((id) => new mongoose.Types.ObjectId(id));
-    
+
   try {
     const limit = parseInt(req.query.limit) || 6;
 
@@ -797,9 +797,9 @@ const updateProduct = async (req, res, next) => {
     if (!isSubSubCategoryExist)
       return next(new BadRequestResponse("Sub-subcategory not found"));
 
-    const isStrikeoAdmin =
-      req?.user?.role?.name === "SuperAdmin" &&
-      req?.user?.role?.type === "StrikeO";
+    // const isStrikeoAdmin =
+    //   req?.user?.role?.name === "SuperAdmin" &&
+    //   req?.user?.role?.type === "StrikeO";
 
     const productSchema = {
       name: true,
@@ -810,7 +810,7 @@ const updateProduct = async (req, res, next) => {
       // Nested pricing object
       pricing: {
         costPrice: true,
-        ...(isStrikeoAdmin && { salePrice: true }),
+        salePrice: true,
         discount: true,
         taxRate: true,
         currency: true,
@@ -860,7 +860,7 @@ const updateProduct = async (req, res, next) => {
           _id: true,
           variantName: true,
           pricing: {
-            ...(isStrikeoAdmin && { salePrice: true }),
+            salePrice: true,
             costPrice: true,
             discount: true,
           },
@@ -944,7 +944,7 @@ const updateProduct = async (req, res, next) => {
       product.publishedAt = new Date();
     }
 
-    await product.save();
+    await product.save({ validateModifiedOnly: true });
 
     if (req?.user?.company) {
       const activity = new Activity({
@@ -1107,7 +1107,7 @@ const rejectProduct = async (req, res, next) => {
 
     product.status = "Rejected";
 
-    await product.save({validateBeforeSave: false});
+    await product.save({ validateBeforeSave: false });
 
     return next(new OkResponse("Product rejected"));
   } catch (error) {

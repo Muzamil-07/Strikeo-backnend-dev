@@ -69,7 +69,7 @@ const ProductSchema = new mongoose.Schema(
         type: Number,
         min: 0,
         default: 0,
-        set: validatePositiveNumber,
+        // set: validatePositiveNumber,
       },
       costPrice: {
         type: Number,
@@ -94,19 +94,17 @@ const ProductSchema = new mongoose.Schema(
         validate: [
           {
             validator: function (val) {
-              if(this?.pricing?.salePrice)
-              return val < this?.pricing?.salePrice;
-              else return true
-
+              if (this?.pricing?.salePrice)
+                return this?.pricing?.salePrice > val;
+              else return true;
             },
             message: "Discount cannot be greater than or equal to sale price.",
           },
           {
             validator: function (val) {
-              if(this?.pricing?.costPrice)
-                return val < this?.pricing?.costPrice;
-              else return true
-
+              if (this?.pricing?.costPrice)
+                return this?.pricing?.costPrice > val;
+              else return true;
             },
             message: "Discount cannot be greater than or equal to cost price.",
           },
@@ -288,7 +286,7 @@ const ProductSchema = new mongoose.Schema(
             type: Number,
             min: 0,
             default: 0,
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
           },
           costPrice: {
             type: Number,
@@ -308,16 +306,16 @@ const ProductSchema = new mongoose.Schema(
             validate: [
               {
                 validator: function (val) {
-                  if(this?.pricing?.salePrice)
-                    return val < this?.pricing?.salePrice;
-                  else return true
+                  if (this?.pricing?.salePrice)
+                    return this?.pricing?.salePrice > val;
+                  else return true;
                 },
                 message:
                   "Variant discount cannot be greater than or equal to sale price.",
               },
               {
                 validator: function (val) {
-                  return val < this?.pricing?.costPrice;
+                  return this?.pricing?.costPrice > val;
                 },
                 message:
                   "Variant discount cannot be greater than or equal to cost price.",
@@ -546,6 +544,35 @@ ProductSchema.pre("save", function (next) {
   this.seo.title = this.name;
   this.seo.description = this.description;
   this.seo.metaTags = this.tags;
+
+  if (this.status === "Published") {
+    let validationErrors = [];
+
+    if (this.variants.length) {
+      this.variants.forEach((variant, i) => {
+        if (variant.pricing.salePrice <= 0) {
+          validationErrors.push(
+            `Variant at position (${i + 1}), salePrice must be greater than 0.`
+          );
+        }
+      });
+    } else {
+      if (this?.pricing?.salePrice <= 0) {
+        validationErrors.push(
+          "Publishing product requires a salePrice greater than 0."
+        );
+      }
+    }
+
+    // If there are validation errors, pass them to next() as a validation error
+    if (validationErrors.length > 0) {
+      const err = new Error(validationErrors.join(" "));
+      return next(err);
+    }
+  }
+
+  // If no validation errors, proceed with saving
+  next();
 
   next();
 });

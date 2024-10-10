@@ -79,11 +79,18 @@ const handleOutOfStockAndNotify = async (email, removedMessages = []) => {
     await handleOrderErrorsAndNotify(email, removedMessages); // Util function to send notifications
   }
 };
-const handleTransactionProcessNotify = async (ipn_Payload = {}) => {
+const handleTransactionProcessNotify = async (
+  ipn_Payload = {},
+  failureReason
+) => {
   try {
     const sslczPayment = await Payment.findOne({
       paymentId: ipn_Payload?.tran_id,
     });
+    if (sslczPayment) {
+      sslczPayment.error = failureReason;
+      await sslczPayment.save();
+    }
 
     // if (!sslczPayment) {
     //   // Payment not found notification

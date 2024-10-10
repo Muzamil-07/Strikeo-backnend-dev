@@ -88,13 +88,19 @@ exports.init = async (req, res, next) => {
       return next(new BadRequestResponse("Cart is empty"));
     }
 
-    const { selectedItems = [] } = await cartFormatForSelectedItems(
-      JSON.parse(JSON.stringify(cart))
-    );
+    const { selectedItems = [], selectedPayableAmount } =
+      await cartFormatForSelectedItems(JSON.parse(JSON.stringify(cart)));
 
     if (selectedItems?.length <= 0) {
       return next(
         new BadRequestResponse("Selected items not found in your cart")
+      );
+    }
+    if (selectedPayableAmount <= 0) {
+      return next(
+        new BadRequestResponse(
+          "The payable amount for selected items must be greater than zero."
+        )
       );
     }
 
@@ -167,7 +173,7 @@ exports.ipn_listener = async (req, res, next) => {
       })
       .catch((error) => {
         console.log("Transaction capture failed => ", error);
-        handleTransactionProcessNotify(req.body).finally(() => {
+        handleTransactionProcessNotify(req.body, error?.message).finally(() => {
           return next(
             new BadRequestResponse(
               "Transaction capture failed: " + error?.message

@@ -184,7 +184,7 @@ const confirmOrder = async (user, cart, userEmail) => {
 const sslczNotification = async (content, userEmail) => {
   try {
     if (!userEmail) {
-      console.info("No target email found.");
+      console.info("No target email found. for sslCommerz notification");
       return;
     }
     const transporter = setTransporter();
@@ -374,11 +374,7 @@ const handleOrderErrorsAndNotify = async (email, removedMessages = []) => {
   }
 };
 const handleOrderCreateFailedNotify = async (email, removedMessage = {}) => {
-  if (
-    !email ||
-    !removedMessage.failureReason ||
-    !removedMessage.items?.length
-  ) {
+  if (!email || !removedMessage.items?.length) {
     console.log("No email, reason, or items to send notifications for.");
     return;
   }
@@ -392,7 +388,7 @@ const handleOrderCreateFailedNotify = async (email, removedMessage = {}) => {
   });
 
   // Extract reason and items from the object
-  const { failureReason = "", items = [], message = "" } = removedMessage;
+  const { failureReason = "N/A", items = [], message = "N/A" } = removedMessage;
 
   // Create table rows for each item under this failure reason
   const tableRows = items.map(

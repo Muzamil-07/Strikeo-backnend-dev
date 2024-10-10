@@ -26,17 +26,14 @@ const cartFormatForSelectedItems = async (cart) => {
   let remainingTotalPrice = 0;
 
   items.forEach((item) => {
-    const quantity = getNumber(item?.quantity);
-    const discount = getNumber(
-      item?.variantDetails
-        ? item?.variantDetails?.pricing?.discount
-        : item?.product?.pricing?.discount
-    );
-    const totalPrice = getNumber(
-      (item?.variantDetails
-        ? item?.variantDetails?.pricing?.salePrice
-        : item?.product?.pricing?.salePrice) * quantity
-    );
+    const quantity = Math.max(0, getNumber(item?.quantity));
+
+    // Extract pricing details from variant or product
+    const pricing = item?.variantDetails
+      ? item?.variantDetails?.pricing
+      : item?.product?.pricing;
+    const discount = Math.max(0, getNumber(pricing?.discount));
+    const totalPrice = Math.max(0, getNumber(pricing?.salePrice) * quantity);
 
     if (item?.selected) {
       selectedItems.push(item);
@@ -51,8 +48,14 @@ const cartFormatForSelectedItems = async (cart) => {
     }
   });
 
-  const selectedPayableAmount = selectedTotalPrice - selectedDiscount;
-  const remainingPayableAmount = remainingTotalPrice - remainingDiscount;
+  const selectedPayableAmount = Math.max(
+    0,
+    selectedTotalPrice - selectedDiscount
+  );
+  const remainingPayableAmount = Math.max(
+    0,
+    remainingTotalPrice - remainingDiscount
+  );
 
   return {
     ...payload,

@@ -3,7 +3,6 @@ const uniqueValidator = require("mongoose-unique-validator");
 const mongoosePaginate = require("mongoose-paginate-v2");
 const { getNumber } = require("../utils/stringsNymber");
 const Product = require("./Product");
-const { handleOrderErrorsAndNotify } = require("../utils/mailer");
 const AutoIncrement = require("mongoose-sequence")(mongoose);
 
 const validatePositiveNumber = (value) => {

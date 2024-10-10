@@ -137,11 +137,16 @@ const captureTransaction = async (data, ipn_Payload) => {
     throw Error("Cart is empty");
   }
 
-  const { selectedItems = [] } = await cartFormatForSelectedItems(
-    JSON.parse(JSON.stringify(cart))
-  );
+  const { selectedItems = [], selectedPayableAmount } =
+    await cartFormatForSelectedItems(JSON.parse(JSON.stringify(cart)));
+
   if (selectedItems?.length <= 0) {
     throw Error("Selected items not found in your cart");
+  }
+  if (selectedPayableAmount <= 0) {
+    throw Error(
+      "The payable amount for selected items must be greater than zero."
+    );
   }
 
   // saving sslcz payload others info
