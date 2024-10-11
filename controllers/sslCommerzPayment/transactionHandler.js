@@ -19,29 +19,28 @@ const handlePaymentFail = async (data, ipn_Payload) => {
   const payment = await Payment.findOne({
     paymentId: ipn_Payload?.tran_id,
   });
+  // const tempUser = JSON.parse(JSON.stringify(payment?.customer));
+  // if (!payment) {
+  //   await sslczNotification(
+  //     {
+  //       name: `${tempUser?.firstName || ""}`,
+  //       intro: `We couldn't locate your payment with Transaction ID: "${ipn_Payload?.tran_id}".`,
+  //       action: {
+  //         instructions: `If you have any questions or need assistance, please don't hesitate to contact us.`,
+  //         button: {
+  //           color: "#3869D4",
+  //           text: "Contact Us",
+  //           link: `mailto:${process.env.SMTP_USER}`,
+  //         },
+  //       },
+  //     },
+  //     tempUser?.email
+  //   );
+  //   throw Error(
+  //     `Payment not found => transaction id => ${ipn_Payload?.tran_id}`
+  //   );
+  // }
 
-  if (!payment) {
-    await sslczNotification(
-      {
-        name: "Hi " + tempUser?.firstName,
-        intro: `We couldn't locate your payment with Transaction ID: "${ipn_Payload?.tran_id}".`,
-        action: {
-          instructions: `If you have any questions or need assistance, please don't hesitate to contact us.`,
-          button: {
-            color: "#3869D4",
-            text: "Contact Us",
-            link: `mailto:${process.env.SMTP_USER}`,
-          },
-        },
-      },
-      tempUser?.email
-    );
-    throw Error(
-      `Payment not found => transaction id => ${ipn_Payload?.tran_id}`
-    );
-  }
-
-  const tempUser = JSON.parse(JSON.stringify(payment?.customer));
   // saving sslcz payload others info
   payment.risk_title = ipn_Payload?.risk_title;
   payment.discount_amount = ipn_Payload?.discount_amount;
@@ -58,36 +57,36 @@ const handlePaymentFail = async (data, ipn_Payload) => {
   payment.currency_type = ipn_Payload?.currency_type;
   payment.currency_amount = ipn_Payload?.currency_amount;
   payment.status = "Failed";
-  payment.error = ipn_Payload?.error;
+  payment.sslcz_error = ipn_Payload?.error;
   payment.validationStatus = data?.status;
   await payment.save();
 
-  if (data?.status === "INVALID_TRANSACTION") {
-    transactionMessage =
-      "Your transaction is invalid. Please check your payment details and try again.";
-  } else {
-    transactionMessage =
-      "There was an issue with your payment with status: " + data?.status;
-  }
+  // if (data?.status === "INVALID_TRANSACTION") {
+  //   transactionMessage =
+  //     "Your transaction is invalid. Please check your payment details and try again.";
+  // } else {
+  //   transactionMessage =
+  //     "There was an issue with your payment with status: " + data?.status;
+  // }
 
-  await sslczNotification(
-    {
-      name: "Hi " + tempUser?.firstName,
-      intro: `Your payment has been ${data?.email_status}! ${transactionMessage}`,
-      action: {
-        instructions: `If you have any questions, feel free to reach out with Transaction ID: "${ipn_Payload?.tran_id}"`,
-        button: {
-          color: "#3869D4",
-          text: "Contact Us",
-          link: `mailto:${process.env.SMTP_USER}`,
-        },
-      },
-    },
-    tempUser?.email
-  );
+  // await sslczNotification(
+  //   {
+  //     name: `${tempUser?.firstName || ""}`,
+  //     intro: `Your payment has been ${data?.email_status}! ${transactionMessage}`,
+  //     action: {
+  //       instructions: `If you have any questions, feel free to reach out with Transaction ID: "${ipn_Payload?.tran_id}"`,
+  //       button: {
+  //         color: "#3869D4",
+  //         text: "Contact Us",
+  //         link: `mailto:${process.env.SMTP_USER}`,
+  //       },
+  //     },
+  //   },
+  //   tempUser?.email
+  // );
 
   throw Error(
-    `Payment failed with validation status => ${data?.status}, Payload staus => ${ipn_Payload?.status}`
+    `There was an issue with your payment status => ${data?.status}, Payload staus => ${ipn_Payload?.status}.`
   );
 };
 
@@ -103,11 +102,17 @@ const captureTransaction = async (data, ipn_Payload) => {
     session
   );
   if (!payment) {
-    throw Error(`Payment not found with status => ${data?.status}`);
+    throw Error(`Payment not found.`);
+  }
+
+  if (payment === "Paid") {
+    throw Error(`Your payment was already processed.`);
   }
 
   if (data?.currency_type !== payment?.currency) {
-    throw Error(`Payment currency_type not matched => ${data?.currency_type}`);
+    throw Error(
+      `Payment currency_type not matched => ${data?.currency_type || null}`
+    );
   }
 
   data.amount = String(data?.amount).split(".")[0];
@@ -259,7 +264,7 @@ const captureTransaction = async (data, ipn_Payload) => {
     // Send email notification
     await sslczNotification(
       {
-        name: `Hi ${user?.firstName}`,
+        name: `${user?.firstName || ""}`,
         intro: `Your payment has been ${data?.email_status} with (${completedOrders?.length}) orders!`,
         action: {
           instructions: "Please review your orders.",

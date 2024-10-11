@@ -676,7 +676,7 @@ const getVendorStats = async (req, res, next) => {
 
     const hotSellingProductDetails = hotSellingProducts.map((product) => {
       const productDetails = productDetailsArray.find(
-        (pd) => String(pd._id) === String(product._id)
+        (pd) => getProductId(pd) === getProductId(product)
       );
       return {
         name: productDetails ? productDetails.name : "",

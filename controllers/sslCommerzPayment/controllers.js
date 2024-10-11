@@ -109,7 +109,7 @@ exports.init = async (req, res, next) => {
       const payment = new Payment({
         paymentId: data.tran_id,
         customer: req.user.id,
-        amount: bill,
+        amount: selectedPayableAmount,
         method: "sslCommerz",
         currency: data.currency,
       });
@@ -173,13 +173,23 @@ exports.ipn_listener = async (req, res, next) => {
       })
       .catch((error) => {
         console.log("Transaction capture failed => ", error);
-        handleTransactionProcessNotify(req.body, error?.message).finally(() => {
+        if (!data?.status === "INVALID_TRANSACTION") {
+          handleTransactionProcessNotify(req.body, error?.message).finally(
+            () => {
+              return next(
+                new BadRequestResponse(
+                  "Transaction capture failed: " + error?.message
+                )
+              );
+            }
+          );
+        } else {
           return next(
             new BadRequestResponse(
               "Transaction capture failed: " + error?.message
             )
           );
-        });
+        }
       });
   } catch (validationError) {
     console.log("sslCommerz payload failed to validate => ", validationError);

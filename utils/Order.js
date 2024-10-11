@@ -143,7 +143,7 @@ const handleTransactionProcessNotify = async (
     // Standard payment issue notification
     await sslczNotification(
       {
-        name: `Hi!`,
+        name: `${user?.firstName || ""}`,
         intro: "We encountered an issue while processing your payment.",
         action: {
           instructions: `We were unable to place your order due to a payment issue. Please try again or contact us if the problem persists.`,
@@ -196,14 +196,14 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
       notFoundCount++; // Track not found items
       continue; // Skip to next item (removing not found items)
     }
-
+    const quantity = getNumber(item.quantity);
     let isValidItem = true; // Flag to check if item is valid
 
     // Check for variants
     if (item?.variantSKU) {
       const variant = item?.variantDetails;
 
-      if (!variant) {
+      if (!variant || !variant?.isActive) {
         notFoundCount++; // Track if variant not found
         continue; // Skip to next item (removing not found variant)
       }
@@ -211,33 +211,61 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
       // Check stock for variants
       if (variant?.inventory?.trackInventory) {
         const variantStock = getNumber(variant?.inventory?.stock);
-        const quantity = getNumber(item.quantity);
 
         if (quantity > variantStock || variantStock === 0) {
           // Track out-of-stock variant
           removedItemsOutOfStock.push({
             name: `${product?.name} Variant: ${variant?.variantName}`,
-            price: `${variant?.pricing?.salePrice} X ${quantity}`,
+            price: `${
+              getNumber(variant?.pricing?.salePrice) -
+              getNumber(variant?.pricing?.discount)
+            } X ${quantity}`,
           });
           isValidItem = false; // Mark item as invalid
           continue; // Skip to next item (removing out-of-stock variant)
         }
+      } else if (!variant?.inventory?.inStock) {
+        // Track out-of-stock variant
+        removedItemsOutOfStock.push({
+          name: `${product?.name} Variant: ${variant?.variantName}`,
+          price: `${Math.max(
+            0,
+            getNumber(variant?.pricing?.salePrice) -
+              getNumber(variant?.pricing?.discount)
+          )} X ${quantity}`,
+        });
+        isValidItem = false; // Mark item as invalid
+        continue; // Skip to next item (removing out-of-stock variant)
       }
     } else {
       // Check stock for the product if no variant
       if (product?.inventory?.trackInventory) {
         const productStock = getNumber(product?.inventory?.stock);
-        const quantity = getNumber(item.quantity);
 
         if (quantity > productStock || productStock === 0) {
           // Track out-of-stock product
           removedItemsOutOfStock.push({
             name: product?.name,
-            price: `${product?.pricing?.salePrice} X ${quantity}`,
+            price: `${Math.max(
+              0,
+              getNumber(product?.pricing?.salePrice) -
+                getNumber(product?.pricing?.discount)
+            )} X ${quantity}`,
           });
           isValidItem = false; // Mark item as invalid
           continue; // Skip to next item (removing out-of-stock product)
         }
+      } else if (!product?.inventory?.inStock) {
+        removedItemsOutOfStock.push({
+          name: product?.name,
+          price: `${Math.max(
+            0,
+            getNumber(product?.pricing?.salePrice) -
+              getNumber(product?.pricing?.discount)
+          )} X ${quantity}`,
+        });
+        isValidItem = false; // Mark item as invalid
+        continue; // Skip to next item (removing out-of-stock product)
       }
     }
 

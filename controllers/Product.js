@@ -96,9 +96,12 @@ const getProducts = async (req, res, next) => {
           name: 1,
         };
       } else if (sort === "price") {
-        sortOptions = { salePrice: 1 };
+        sortOptions = {
+          "variants.pricing.salePrice": 1,
+          "pricing.salePrice": 1,
+        };
       } else if (sort === "recent") {
-        sortOptions = { createdAt: -1 }; // Sort by most recent (descending)
+        sortOptions = { createdAt: -1 };
       }
     }
 

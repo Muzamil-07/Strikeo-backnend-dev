@@ -615,9 +615,9 @@ ProductSchema.methods.toJSON = function () {
     isActive: this.isActive,
     // embedding: this.embedding,
     status: this.status,
-    // publishedAt: this.publishedAt,
+    publishedAt: this.publishedAt,
     // productSequence: this.productSequence,
-    // createdAt: this.createdAt,
+    createdAt: this.createdAt,
     // updatedAt: this.updatedAt,
   };
 };

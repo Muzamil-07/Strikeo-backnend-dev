@@ -109,6 +109,10 @@ const PaymentSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    sslcz_error: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );
@@ -151,6 +155,7 @@ PaymentSchema.methods.toJSON = function () {
     currency_amount: this.currency_amount,
     validationStatus: this.validationStatus,
     error: this.error,
+    sslcz_error: this.sslcz_error,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

@@ -491,10 +491,21 @@ OrderSchema.pre("save", async function (next) {
             validItems.push(item);
           }
         } else {
-          console.log(
-            `* Tracking inventory is Off for variant SKU => ${variant?.sku} *`
-          );
-          validItems.push(item); // Add item to valid items since we're not tracking inventory
+          if (variant?.inventory?.inStock) {
+            console.log(
+              `* Tracking inventory is OFF but In Stock is ON for variant SKU: ${
+                variant?.sku || "N/A"
+              }. No stock reduction. *`
+            );
+            vendorBill += getNumber(variant?.pricing?.costPrice) * quantity; // Accumulate cost
+            validItems.push(item); // Add item to valid items since we're not tracking inventory
+          } else {
+            console.log(
+              `* Tracking inventory and In Stock is OFF for variant SKU => ${
+                variant?.sku || "N/A"
+              }, Item revomved from order *`
+            );
+          }
         }
       } else {
         item.variantSnapshot = null;
@@ -521,10 +532,21 @@ OrderSchema.pre("save", async function (next) {
             validItems.push(item); // Add item to valid items
           }
         } else {
-          console.log(
-            `* Tracking inventory is Off for product SKU => ${product?.sku} *`
-          );
-          validItems.push(item); // Add item to valid items since we're not tracking inventory
+          if (product?.inventory?.inStock) {
+            console.log(
+              `Tracking inventory is OFF but In Stock is ON for product SKU => ${
+                product?.sku || "N/A"
+              }. No stock reduction.`
+            );
+            vendorBill += getNumber(product?.pricing?.costPrice) * quantity; // Accumulate cost
+            validItems.push(item); // Add item to valid items since we allow backorders
+          } else {
+            console.log(
+              `* Tracking inventory and In Stock is OFF for product SKU => ${
+                product?.sku || "N/A"
+              }, Item revomved from order. *`
+            );
+          }
         }
       }
     }
@@ -532,7 +554,7 @@ OrderSchema.pre("save", async function (next) {
     // Update items array with valid items
     this.items = validItems;
 
-    this.vendorBill = vendorBill;
+    this.vendorBill = Math.max(0, vendorBill);
   }
 
   next();

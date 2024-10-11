@@ -5,8 +5,8 @@ const checkStockStatus = (productInfo) => {
   const { inventory } = productInfo || {};
   if (!inventory) return false;
 
-  if (inventory.trackInventory) {
-    return getNumber(inventory.stock) > 0;
+  if (inventory?.trackInventory) {
+    return inventory?.allowBackorders ? true : getNumber(inventory.stock) > 0;
   }
 
   return !!inventory.inStock;
