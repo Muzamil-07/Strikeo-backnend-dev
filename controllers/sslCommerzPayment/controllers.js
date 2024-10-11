@@ -173,23 +173,13 @@ exports.ipn_listener = async (req, res, next) => {
       })
       .catch((error) => {
         console.log("Transaction capture failed => ", error);
-        if (!data?.status === "INVALID_TRANSACTION") {
-          handleTransactionProcessNotify(req.body, error?.message).finally(
-            () => {
-              return next(
-                new BadRequestResponse(
-                  "Transaction capture failed: " + error?.message
-                )
-              );
-            }
-          );
-        } else {
+        handleTransactionProcessNotify(req.body, error?.message).finally(() => {
           return next(
             new BadRequestResponse(
               "Transaction capture failed: " + error?.message
             )
           );
-        }
+        });
       });
   } catch (validationError) {
     console.log("sslCommerz payload failed to validate => ", validationError);
