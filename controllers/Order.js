@@ -138,7 +138,8 @@ const getOrderById = async (req, res, next) => {
           },
           {
             path: "agent",
-            select: "firstName lastName contact.phone",
+            select:
+              "firstName lastName contact.phone vehicle availability warehouse",
           },
           {
             path: "payment",
@@ -191,7 +192,8 @@ const getOrderById = async (req, res, next) => {
           },
           {
             path: "agent",
-            select: "firstName lastName contact.phone",
+            select:
+              "firstName lastName contact.phone vehicle availability warehouse",
           },
           {
             path: "payment",
@@ -537,9 +539,11 @@ const updateOrder = async (req, res, next) => {
       },
       StrikeO: {
         query: { _id: orderId },
-        $set: {
-          ...req.body,
-          [`statusHistory.${status}`]: new Date(), // Dynamically set the new status with the current date
+        update: {
+          $set: {
+            ...req.body,
+            [`statusHistory.${status}`]: new Date(), // Dynamically set the new status with the current date
+          },
         },
       },
     }[roleType];
@@ -548,34 +552,40 @@ const updateOrder = async (req, res, next) => {
       return next(new BadRequestResponse("Permission denied"));
     }
 
-    const orderAgent = await Agent.findById(agent);
-
     const updatedOrder = await Order.findOneAndUpdate(
       updateOps.query,
       updateOps.update,
       { new: true }
-    );
-
-    if (orderAgent) {
-      try {
-        const messageBody = createMessageBody(userOrder, selectedAgent);
-        // console.log("\n\n", messageBody, "\n\n");
-        const message = await twilioClient.messages.create({
-          body: messageBody,
-          from: "whatsapp:+14155238886",
-          to: "whatsapp:" + orderAgent.contact.phone,
-        });
-        console.log(message, "Message sent successfully!");
-      } catch (error) {
-        console.log(error, "Error in sending in message!");
-      }
-    }
+    ).populate("agent company");
     if (!updatedOrder) {
       return next(new BadRequestResponse("Order not found"));
     }
 
+    const orderAgent = await Agent.findById(agent);
+    if (orderAgent) {
+      try {
+        const messageBody = createMessageBody(updatedOrder, selectedAgent);
+        const message = await twilioClient.messages.create({
+          body: messageBody,
+          from: "whatsapp:" + process.env.TWILIO_PHONE,
+          to: "whatsapp:" + orderAgent.contact.phone,
+        });
+        console.log(
+          "Message sent to agent on WhatsApp successfully!",
+          message.apiVersion
+        );
+      } catch (error) {
+        console.log(error, "Error in sending agent WhatsApp message!");
+        return next(
+          new BadRequestResponse(
+            error?.message || "Failed to notify agent. Please try again."
+          )
+        );
+      }
+    }
+
     if (roleType === "Vendor") {
-      if (agent && agent !== userOrder?.agent?.id) {
+      if (agent && String(agent) !== getProductId(userOrder?.agent)) {
         const activity = new Activity({
           employeeName: req.user.firstName + " " + req.user.lastName,
           company: req.user.company.id,

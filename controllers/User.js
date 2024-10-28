@@ -540,19 +540,19 @@ const googleAuth = async (req, res, next) => {
 
         return res.status(200).send(errorResponse);
       }
-      if (!user.googleId) {
-        const errorResponse = htmlPage.replace(
-          "%value%",
-          JSON.stringify({
-            error: "Authentication failed due to duplicate auth method!",
-          })
-        );
+      // if (!user.googleId) {
+      //   const errorResponse = htmlPage.replace(
+      //     "%value%",
+      //     JSON.stringify({
+      //       error: "Authentication failed due to duplicate auth method!",
+      //     })
+      //   );
 
-        return res.status(200).send(errorResponse);
-        // user.googleId = googleId;
-        // await user.save();
-        // response.linked = true;
-      }
+      //   return res.status(200).send(errorResponse);
+      //   // user.googleId = googleId;
+      //   // await user.save();
+      //   // response.linked = true;
+      // }
       // if ( user.googleId && model ) {
       //   const errorResponse = htmlPage.replace(
       //     "%value%",
@@ -561,10 +561,10 @@ const googleAuth = async (req, res, next) => {
 
       //   return res.status( 200 ).send( errorResponse );
       // }
-      if (profileImage) {
-        user.profileImage = profileImage;
-        await user.save();
-      }
+      if (profileImage) user.profileImage = profileImage;
+      if (firstName) user.firstName = firstName;
+      if (lastName) user.lastName = lastName;
+      await user.save();
       await user.populate(
         "role cart activeBillingAddress billingAddresses favouriteProducts"
       );
@@ -705,10 +705,10 @@ const facebookAuth = async (req, res, next) => {
 
       //   return res.status( 200 ).send( errorResponse );
       // }
-      if (profileImage) {
-        user.profileImage = profileImage;
-        await user.save();
-      }
+      if (profileImage) user.profileImage = profileImage;
+      if (firstName) user.firstName = firstName;
+      if (lastName) user.lastName = lastName;
+      await user.save();
       await user.populate(
         "role cart activeBillingAddress billingAddresses favouriteProducts"
       );

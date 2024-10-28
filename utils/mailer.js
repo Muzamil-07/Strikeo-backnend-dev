@@ -12,6 +12,9 @@ let {
   emailChangeTemplate,
   updatePasswordTemplate,
   emailOTPTemplate,
+  orderConfirmTemplate,
+  sslCommerzeOrderTemplate,
+  contactUsMailTemplate,
 } = require("../templates/email");
 const { getNumber } = require("./stringsNymber");
 
@@ -62,7 +65,7 @@ const sendEmail = (user, subject, body) => {
     const msg = {
       to: user?.email || user?.contact?.email,
       // from: process.env.SMTP_USER,
-      from: `"Strike'O" <${process.env.SMTP_USER}>`,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
       subject,
       html: template,
     };
@@ -84,18 +87,6 @@ const sendEmail = (user, subject, body) => {
 const confirmOrder = async (user, cart, userEmail) => {
   try {
     const transporter = setTransporter();
-
-    const mailGenerator = new Mailgen({
-      theme: "default",
-      product: {
-        // Appears in header & footer of e-mails
-        name: "StrikeO",
-        link: process.env.FRONTEND_URL,
-        // Optional product logo
-        // logo: 'https://mailgen.js/img/logo.png'
-      },
-    });
-
     const data = cart.items.map((item) => {
       // Prioritize variantDetails if available, otherwise fallback to product details
       const productInfo = item?.variantDetails || item?.product;
@@ -124,49 +115,13 @@ const confirmOrder = async (user, cart, userEmail) => {
       return table;
     });
 
-    const email = {
-      body: {
-        name: "there",
-        intro: `You recently placed an order of TK. ${cart.bill} on StrikO for following items!`,
-        table: {
-          data,
-          // columns: {
-          // 	// Optionally, customize the column widths
-          // 	customWidth: {
-          // 		item: "20%",
-          // 		price: "15%",
-          // 	},
-          // 	// Optionally, change column text alignment
-          // 	customAlignment: {
-          // 		price: "right",
-          // 	},
-          // },
-        },
-        action: {
-          instructions:
-            "Please confirm your order by clicking on below button:",
-          button: {
-            color: "#3869D4",
-            text: "Confirm Order",
-            link: user.confirm_token.link,
-          },
-        },
-        // outro: "We thank you for your purchase.",
-      },
-    };
-
-    // Generate an HTML email with the provided contents
-    const emailBody = mailGenerator.generate(email);
-
-    // Generate the plaintext version of the e-mail (for clients that do not support HTML)
-    const emailText = mailGenerator.generatePlaintext(email);
-
+    const bill = cart.bill;
     const msg = {
       to: userEmail,
       // from: process.env.SMTP_USER,
-      from: `"StrikeO" <${process.env.SMTP_USER}>`,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
       subject: "Order Confirmation",
-      html: emailBody,
+      html: orderConfirmTemplate(data, user, bill),
     };
 
     transporter.sendMail(msg, (err, info) => {
@@ -189,34 +144,12 @@ const sslczNotification = async (content, userEmail) => {
     }
     const transporter = setTransporter();
 
-    const mailGenerator = new Mailgen({
-      theme: "default",
-      product: {
-        // Appears in header & footer of e-mails
-        name: "StrikeO",
-        link: process.env.FRONTEND_URL,
-        // Optional product logo
-        // logo: 'https://mailgen.js/img/logo.png'
-      },
-    });
-
-    const email = {
-      body: {
-        ...content,
-      },
-    };
-
-    const emailBody = mailGenerator.generate(email);
-
-    // Generate the plaintext version of the e-mail (for clients that do not support HTML)
-    // const emailText = mailGenerator.generatePlaintext(email);
-
     const msg = {
       to: userEmail,
       // from: process.env.SMTP_USER,
-      from: `"StrikeO" <${process.env.SMTP_USER}>`,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
       subject: "SSLCommerz Transaction",
-      html: emailBody,
+      html: sslCommerzeOrderTemplate(content),
     };
 
     transporter.sendMail(msg, (err, info) => {
@@ -230,58 +163,23 @@ const sslczNotification = async (content, userEmail) => {
     console.log("SSLCommerz Transaction Email failed to sent", error);
   }
 };
+
 const sendContactUsEmail = async ({ name, email, phone, message }) => {
   return new Promise((resolve, reject) => {
     try {
-      const transporter = setTransporter();
-
-      const mailGenerator = new Mailgen({
-        theme: "default",
-        product: {
-          name: "StrikeO",
-          link: process.env.FRONTEND_URL,
-        },
-      });
-
-      const emailContent = {
-        body: {
-          name: "Dear Team", // Greeting for the email recipient (e.g., support team)
-          intro: `You have received a new message from the "Contact Us" form.`,
-          table: {
-            data: [
-              {
-                Name: name,
-                Email: email,
-                Phone: phone,
-                Message: message,
-              },
-            ],
-            columns: {
-              customWidth: {
-                Name: "15%",
-                Email: "25%",
-                Phone: "20%",
-                Message: "40%",
-              },
-              customAlignment: {
-                Name: "left",
-                Email: "left",
-                Phone: "left",
-                Message: "left",
-              },
-            },
-          },
-          outro: "Please respond to the user's inquiry as soon as possible.",
-        },
+      const data = {
+        name,
+        email,
+        phone,
+        message,
       };
-
-      const emailBody = mailGenerator.generate(emailContent);
+      const transporter = setTransporter();
 
       const msg = {
         to: process.env.SMTP_USER || "support@strikeo.com", // Send to support or relevant team
         from: `"${name}" <${email}>`,
         subject: "New Contact Us Form Submission",
-        html: emailBody,
+        html: contactUsMailTemplate(data),
       };
 
       transporter.sendMail(msg, (err, info) => {
@@ -309,7 +207,7 @@ const handleOrderErrorsAndNotify = async (email, removedMessages = []) => {
   const mailGenerator = new Mailgen({
     theme: "default",
     product: {
-      name: "StrikeO",
+      name: "Strikeo",
       link: process.env.FRONTEND_URL,
     },
   });
@@ -337,7 +235,7 @@ const handleOrderErrorsAndNotify = async (email, removedMessages = []) => {
     body: {
       title:
         "Hi! Thank you for your recent order with us. We wanted to keep you updated about its status.",
-      // signature: "Best Regards,\nThe StrikeO Team",
+      // signature: "Best Regards,\nThe Strikeo Team",
       outro: "Thank you for your understanding!",
       // Combine section titles and list items
       intro: emailBodySections
@@ -359,7 +257,7 @@ const handleOrderErrorsAndNotify = async (email, removedMessages = []) => {
 
   const emailOptions = {
     to: email,
-    from: `"StrikeO" <${process.env.SMTP_USER}>`,
+    from: `"Strikeo" <${process.env.SMTP_USER}>`,
     subject: "Update on Your Order",
     html: emailContent,
   };
@@ -382,7 +280,7 @@ const handleOrderCreateFailedNotify = async (email, removedMessage = {}) => {
   const mailGenerator = new Mailgen({
     theme: "default",
     product: {
-      name: "StrikeO",
+      name: "Strikeo",
       link: process.env.FRONTEND_URL,
     },
   });
@@ -446,7 +344,7 @@ const handleOrderCreateFailedNotify = async (email, removedMessage = {}) => {
 
   const emailOptions = {
     to: email,
-    from: `"StrikeO" <${process.env.SMTP_USER}>`,
+    from: `"Strikeo" <${process.env.SMTP_USER}>`,
     subject: "Update on Your Order",
     html: emailContent,
   };

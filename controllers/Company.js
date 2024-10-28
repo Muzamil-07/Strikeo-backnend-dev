@@ -24,7 +24,7 @@ const getAllVendors = async (req, res, next) => {
     };
 
     const options = {
-      sort: { createdAt: -1 },
+      sort: { name: 1 },
       offset,
       limit,
     };
@@ -44,6 +44,71 @@ const getAllVendors = async (req, res, next) => {
   } catch (error) {
     console.log(error);
     return next(new BadRequestResponse("Something went wrong"));
+  }
+};
+const getAllCompanies = async (req, res, next) => {
+  try {
+    const { page, all, fields } = req.query;
+
+    // Convert fields query parameter to an array of field names
+    const selectedFields = fields
+      ? fields.split(",").map((field) => field.trim())
+      : [];
+
+    // If `all` is true, fetch all companies without pagination
+    if (all === "true") {
+      const aggregationPipeline = [{ $sort: { name: 1 } }];
+
+      // Add projection only if selectedFields is not empty
+      if (selectedFields?.length > 0) {
+        const projection = selectedFields.reduce(
+          (acc, field) => ({ ...acc, [field]: 1 }),
+          {}
+        );
+        aggregationPipeline.push({ $project: projection });
+      }
+
+      const companies = await Company.aggregate(aggregationPipeline);
+
+      return next(
+        new OkResponse({
+          companies,
+          totalCompanies: companies.length,
+        })
+      );
+    }
+
+    // Pagination logic
+    const limit = 10;
+    const offset = page ? (parseInt(page, 10) - 1) * limit : 0;
+
+    const query = {};
+    const options = {
+      sort: { name: 1 },
+      offset,
+      limit,
+      select: selectedFields.length > 0 ? selectedFields.join(" ") : undefined,
+    };
+
+    const companies = await Company.paginate(query, options);
+
+    return next(
+      new OkResponse({
+        companies: companies.docs,
+        totalCompanies: companies.totalDocs,
+        totalPages: companies.totalPages,
+        hasPrevPage: companies.hasPrevPage,
+        hasNextPage: companies.hasNextPage,
+        currentPage: companies.page,
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching companies:", error); // More descriptive error logging
+    return next(
+      new BadRequestResponse(
+        "Failed to retrieve companies. Please try again later."
+      )
+    );
   }
 };
 
@@ -217,7 +282,7 @@ const createCompany = async (req, res, next) => {
         Math.random().toString(36).substring(2, 15);
       const reset_token = {
         token,
-        link: `${process.env.FRONTEND_URL}/create-password?email=${findedVendor?.contact?.email}&token=${token}`,
+        link: `${process.env.BACKEND_URL}/create-password?email=${findedVendor?.contact?.email}&token=${token}`,
         // 1 week token for password generation
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
       };
@@ -542,6 +607,7 @@ const addLog = async (req, res, next) => {
 };
 
 const CompanyController = {
+  getAllCompanies,
   getAllVendors,
   createCompany,
   getCompanyById,

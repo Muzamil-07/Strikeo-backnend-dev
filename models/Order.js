@@ -603,6 +603,7 @@ OrderSchema.methods.toJSON = function () {
     orderNumber: this.orderNumber,
     vendorBill: this.vendorBill,
     status: this.status,
+    agent: this.agent,
     statusHistory: this.statusHistory,
     orderSequence: this.orderSequence,
     confirm_token: this.confirm_token,

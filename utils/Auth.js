@@ -1,4 +1,4 @@
-exports.generateOTPCode = async function generateCode(length = 6) {
+exports.generateOTPCode = async function generateCode(length = 4) {
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const code = Array.from({ length }, () =>

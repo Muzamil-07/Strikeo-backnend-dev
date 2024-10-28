@@ -10,6 +10,7 @@ const User = require("../models/User.js");
 
 const { sendEmail } = require("../utils/mailer.js");
 const Role = require("../models/Role.js");
+const { default: mongoose } = require("mongoose");
 
 const getAllVendors = async (req, res, next) => {
   try {
@@ -62,17 +63,20 @@ const getAllVendors = async (req, res, next) => {
 const getVendorById = async (req, res, next) => {
   const { id } = req.params;
 
-  if (!id) return next(new BadRequestResponse("Vendor ID is required"));
+  if (!id || !mongoose.isValidObjectId(id))
+    return next(new BadRequestResponse("Vendor ID is required"));
 
   try {
-    const vendor = await User.findOne({ _id: id, role: "vendor" });
+    const vendor = await Vendor.findById(id);
 
     if (!vendor) return next(new BadRequestResponse("Vendor not found"));
 
     return next(new OkResponse(vendor));
   } catch (error) {
     console.log(error);
-    return next(new BadRequestResponse("Something went wrong"));
+    return next(
+      new BadRequestResponse(error?.message || "Something went wrong")
+    );
   }
 };
 
@@ -138,7 +142,7 @@ const createVendor = async (req, res, next) => {
         Math.random().toString(36).substring(2, 15);
       vendor.reset_token = {
         token,
-        link: `${process.env.FRONTEND_URL}/create-password?email=${contact.email}&token=${token}`,
+        link: `${process.env.BACKEND_URL}/create-password?email=${contact.email}&token=${token}`,
         // 2 week token for password generation
         expires: Date.now() + 14 * 24 * 60 * 60 * 1000,
       };
@@ -163,11 +167,11 @@ const resendPasswordGenMail = async (req, res, next) => {
     if (!vendor) return next(new BadRequestResponse("Vendor not found"));
 
     if (vendor?.isVerified) {
-      return next(new BadRequestResponse("User already verified!"));
+      return next(new BadRequestResponse("Vendor already verified!"));
     }
     if (!vendor?.company || !(await Company.exists(vendor?.company))) {
       return next(
-        new BadRequestResponse("User has no comapny or incomplete profile!")
+        new BadRequestResponse("Vendor has no comapny or incomplete profile!")
       );
     }
 
@@ -176,7 +180,7 @@ const resendPasswordGenMail = async (req, res, next) => {
       Math.random().toString(36).substring(2, 15);
     vendor.reset_token = {
       token,
-      link: `${process.env.FRONTEND_URL}/create-password?email=${vendor?.contact.email}&token=${token}`,
+      link: `${process.env.BACKEND_URL}/create-password?email=${vendor?.contact.email}&token=${token}`,
       // 2 week token for password generation
       expires: Date.now() + 14 * 24 * 60 * 60 * 1000,
     };
@@ -251,7 +255,7 @@ const updateVendorById = async (req, res, next) => {
         Math.random().toString(36).substring(2, 15);
       vendor.reset_token = {
         token,
-        link: `${process.env.FRONTEND_URL}/create-password?email=${vendor.contact.email}&token=${token}`,
+        link: `${process.env.BACKEND_URL}/create-password?email=${vendor.contact.email}&token=${token}`,
         // 1 week token for password generation
         expires: Date.now() + 14 * 24 * 60 * 60 * 1000,
       };

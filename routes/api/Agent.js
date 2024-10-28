@@ -13,7 +13,13 @@ router.get("/:id", AgentController.getAgentById);
 router.use(auth.verifyToken, auth.isAdmin);
 router.post("/", AgentController.createAgent);
 router.put("/:id", AgentController.updateAgentById);
-router.put("/block/:id", AgentController.blockAgentById);
-router.put("/unblock/:id", AgentController.unblockAgentById);
+router.delete("/:id", AgentController.deleteAgentById);
+
+router.put(
+  "/blocking/:id",
+  auth.verifyToken,
+  auth.isAdmin,
+  AgentController.toggleAgentStatus
+);
 
 module.exports = router;

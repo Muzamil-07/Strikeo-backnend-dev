@@ -72,7 +72,7 @@ const getAllCategoriesForUsersOrVendors = async (req, res, next) => {
           path: 'subSubCategories',
           select: 'name id'
         }
-      });
+      }).sort({name: 1});
 
     // Filter categories without any subcategories (if name filtering is applied)
     const filteredCategories = categories.filter(category => category.subCategories.length > 0 || !name);

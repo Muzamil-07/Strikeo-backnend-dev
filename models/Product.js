@@ -588,6 +588,8 @@ ProductSchema.index({ "pricing.salePrice": 1 });
 
 // Creating a multikey index for 'variants.pricing.salePrice'
 ProductSchema.index({ "variants.pricing.salePrice": 1 });
+ProductSchema.set("toObject", { virtuals: true });
+ProductSchema.set("toJSON", { virtuals: true });
 
 ProductSchema.methods.toJSON = function () {
   return {

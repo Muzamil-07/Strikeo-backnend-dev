@@ -15,7 +15,7 @@ router.put("/employee/:id", CompanyController.updateEmployeeById);
 router.put("/employee/toggle-activation/:id", CompanyController.toggleEmployeeActivation);
 
 router.use(auth.isAdmin);
-// router.get("/", CompanyController.getAllVendors);
+router.get("/", CompanyController.getAllCompanies);
 router.get("/:id", CompanyController.getCompanyById);
 
 router.post("/", CompanyController.createCompany);

@@ -15,6 +15,7 @@ const BrandRoute = require("./Brand.js");
 const ReviewRoute = require("./Review.js");
 const ShippingRoute = require("./Shipping.js");
 const ChatBotRoute = require("./ChatBot.js");
+const WareHouseRoute = require("./Warehouse.js");
 
 const router = express.Router();
 
@@ -34,5 +35,6 @@ router.use("/brand", BrandRoute);
 router.use("/reviews", ReviewRoute);
 router.use("/shipping", ShippingRoute);
 router.use("/chatbot", ChatBotRoute);
+router.use("/warehouse", WareHouseRoute);
 
 module.exports = router;

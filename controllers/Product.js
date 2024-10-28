@@ -12,111 +12,97 @@ const { default: mongoose } = require("mongoose");
 const { slugify } = require("slugify-unicode");
 const Brand = require("../models/Brand.js");
 const filterObjectBySchema = require("../utils/filterObject.js");
-const { getNumber } = require("../utils/stringsNymber.js");
+const { getNumber, getProductId } = require("../utils/stringsNymber.js");
 
-const getProducts = async (req, res, next) => {
+const getPublicProducts = async (req, res, next) => {
   try {
     const {
-      page,
+      page = 1,
       all,
       search,
       category: categoryName,
-      limit: limitPerPage,
+      limit: limitPerPage = 10,
       minPrice,
       maxPrice,
       sort = "recent",
       discount,
       brand = "",
     } = req.query;
+
     const query = {
       isActive: true,
       status: "Published",
     };
+
+    // Handle search by name
     if (search) {
-      const nameRegex = new RegExp(search, "i");
-      query.name = nameRegex;
+      query.name = new RegExp(search, "i"); // Case-insensitive search
     }
-    // if (categoryName && categoryName !== "undefined") {
-    //   const categoryRegex = new RegExp(categoryName, "i");
 
-    //   const category = await SubSubCategory.findOne({ name: categoryRegex });
-    //   if (category?.parentCategory) query.category = category.parentCategory;
-    //   if (category?._id) query.subSubCategory = category._id;
-    // }
-
-    // Filter by  multiple subSubCategories
+    // Handle subSubCategory filtering by multiple categories
     if (categoryName && categoryName !== "undefined") {
-      const subSubCategories = categoryName
+      const categoryRegexes = categoryName
         .split(",")
-        .map((subCat) => new RegExp(subCat.trim(), "i"));
+        .map((cat) => new RegExp(cat.trim(), "i"));
 
-      // Find matching subSubCategories
       const matchingSubSubCategories = await SubSubCategory.find({
-        name: { $in: subSubCategories },
-      });
+        name: { $in: categoryRegexes },
+      }).select("_id");
 
-      const subSubCategoryIds = matchingSubSubCategories.map(
-        (subCat) => subCat._id
-      );
-
-      if (subSubCategoryIds.length > 0) {
+      const subSubCategoryIds = matchingSubSubCategories.map((cat) => cat._id);
+      if (subSubCategoryIds.length) {
         query.subSubCategory = { $in: subSubCategoryIds };
       }
     }
 
-    // Filter by price range
+    // Handle price range filtering
     if (minPrice || maxPrice) {
-      query.$or = [];
+      const sanitizedMinPrice = minPrice ? Math.max(0, getNumber(minPrice)) : 0;
+      const sanitizedMaxPrice = maxPrice
+        ? Math.max(0, getNumber(maxPrice))
+        : Number.MAX_SAFE_INTEGER;
 
-      let variantPriceQuery = { "variants.pricing.salePrice": {} };
-      let productPriceQuery = { "pricing.salePrice": {} };
-
-      // Ensure minPrice and maxPrice are non-negative
-      const sanitizedMinPrice =
-        minPrice && getNumber(minPrice) < 0 ? 0 : getNumber(minPrice);
-      const sanitizedMaxPrice =
-        maxPrice && getNumber(maxPrice) < 0 ? 0 : getNumber(maxPrice);
-
-      variantPriceQuery["variants.pricing.salePrice"].$gte = sanitizedMinPrice;
-      productPriceQuery["pricing.salePrice"].$gte = sanitizedMinPrice;
-
-      variantPriceQuery["variants.pricing.salePrice"].$lte = sanitizedMaxPrice;
-      productPriceQuery["pricing.salePrice"].$lte = sanitizedMaxPrice;
-
-      // Add to $or query
-      query.$or.push(variantPriceQuery);
-      query.$or.push(productPriceQuery);
+      query.$or = [
+        {
+          "variants.pricing.salePrice": {
+            $gte: sanitizedMinPrice,
+            $lte: sanitizedMaxPrice,
+          },
+        },
+        {
+          "pricing.salePrice": {
+            $gte: sanitizedMinPrice,
+            $lte: sanitizedMaxPrice,
+          },
+        },
+      ];
     }
 
-    // Set up sorting
-    let sortOptions = {};
-    if (sort) {
-      if (sort === "name") {
-        sortOptions = {
-          name: 1,
-        };
-      } else if (sort === "price") {
-        sortOptions = {
-          "variants.pricing.salePrice": 1,
-          "pricing.salePrice": 1,
-        };
-      } else if (sort === "recent") {
-        sortOptions = { createdAt: -1 };
-      }
-    }
-
-    // Filter by discount
+    // Handle discount filtering
     if (discount && discount === "all") {
       query.discount = { $gt: 0 };
     }
-    // Filter by brand
-    if (brand.trim()) {
-      const brands = brand.split(",").map((subCat) => subCat.trim());
 
-      const brandIds = await Brand.find({ name: { $in: brands } }).distinct(
+    // Handle brand filtering
+    if (brand.trim()) {
+      const brandNames = brand.split(",").map((b) => b.trim());
+      const brandIds = await Brand.find({ name: { $in: brandNames } }).distinct(
         "_id"
       );
-      if (brandIds) query.brand = { $in: brandIds };
+      if (brandIds.length) {
+        query.brand = { $in: brandIds };
+      }
+    }
+
+    // Sort options
+    const sortOptions = {};
+    if (sort === "name") {
+      sortOptions.name = 1; // Ascending
+    } else if (sort === "price") {
+      sortOptions["variants.pricing.salePrice"] = 1;
+      sortOptions["pricing.salePrice"] = 1;
+    } else if (sort === "recent") {
+      sortOptions.createdAt = -1; // Descending (most recent first)
     }
 
     if (all) {
@@ -135,27 +121,47 @@ const getProducts = async (req, res, next) => {
         })
       );
     }
-    const limit = limitPerPage ?? 10;
-    const offset = page ? (parseInt(page) - 1) * limit : 0;
 
+    const limit = parseInt(limitPerPage);
     const options = {
       populate: "subCategory subSubCategory category",
       sort: sortOptions,
-      offset,
+      page: parseInt(page),
       limit,
     };
 
+    // Fetch products
     const products = await Product.paginate(query, options);
+
+    // Fetch the most expensive product price
+    const priceAggregation = await Product.aggregate([
+      // { $match: query },
+      {
+        $project: {
+          maxPrice: {
+            $cond: {
+              if: { $gt: [{ $size: "$variants" }, 0] },
+              then: { $max: "$variants.pricing.salePrice" },
+              else: "$pricing.salePrice",
+            },
+          },
+        },
+      },
+      { $sort: { maxPrice: -1 } },
+      { $limit: 1 },
+    ]).allowDiskUse(true);
+
+    const maxPriceRange = priceAggregation[0]?.maxPrice || 0;
 
     return next(
       new OkResponse({
         totalProducts: products.totalDocs,
         products: products.docs,
         totalPages: products.totalPages,
-        currentPage: products.page - 1,
+        currentPage: products.page,
         hasPrevPage: products.hasPrevPage,
         hasNextPage: products.hasNextPage,
-        currentPage: products.page,
+        maxPriceRange,
       })
     );
   } catch (error) {
@@ -170,47 +176,45 @@ const getAllProducts = async (req, res, next) => {
       search,
       page,
       all,
-      category: categoryName,
+      category,
       company,
       limit: limitPerPage,
       status: productStatus,
     } = req.query;
     const roleType = req.user.role.type;
 
-    let query = {
-      Vendor: {
-        company: req.user?.company?.id,
-      },
-      Strikeo: {
-        company: company || {},
-      },
-      User: {
-        isActive: true,
-        status: "Published",
-      },
-    }[roleType];
+    // Define the query based on roleType with a fallback to an empty object
+    let query =
+      {
+        Vendor: {
+          company: getProductId(req.user?.company),
+        },
+        StrikeO: {},
+        User: {
+          isActive: true,
+          status: "Published",
+        },
+      }[roleType] || {};
 
     let sortOpt = { createdAt: -1 };
 
-    if (categoryName && categoryName !== "undefined") {
-      const categoryRegex = new RegExp(categoryName, "i");
-
-      const category = await SubSubCategory.findOne({ name: categoryRegex });
-      if (category?.parentCategory) query.category = category.parentCategory;
-    }
-
+    // Add search filter if provided
     if (search) {
       const nameRegex = new RegExp(search, "i");
       query = { ...query, name: nameRegex };
     }
 
-    if (all) {
-      // if (categoryName) {
-      //   const categoryRegex = new RegExp(categoryName, "i");
+    // Add category filter if provided
+    if (category) {
+      query = { ...query, category };
+    }
+    // Add category filter if provided
+    if (company) {
+      query = { ...query, company };
+    }
 
-      //   const category = await Category.findOne({ name: categoryRegex });
-      //   query.category = category.id;
-      // }
+    // Handle the 'all' case
+    if (all) {
       const products = await Product.find({ isActive: true })
         .populate({
           path: "subSubCategories",
@@ -233,20 +237,14 @@ const getAllProducts = async (req, res, next) => {
 
       return next(new OkResponse(products));
     } else {
-      const limit = limitPerPage ?? 10;
+      const limit = limitPerPage ? parseInt(limitPerPage) : 10; // Ensure limit is an integer
       const offset = page ? (parseInt(page) - 1) * limit : 0;
 
-      // if (categoryName) {
-      //   const categoryRegex = new RegExp(categoryName, "i");
-
-      //   const category = await Category.findOne({ name: categoryRegex });
-      //   query.category = category.id;
-      // }
-
+      // Adjust the query based on productStatus
       if (productStatus) {
         if (productStatus === "Published") {
           query = { ...query, status: "Published" };
-          sortOpt = { publishedAt: -1 };
+          sortOpt = { publishedAt: -1, createdAt: -1 };
         } else {
           query = { ...query, status: { $ne: "Published" } };
           sortOpt = { createdAt: -1 };
@@ -255,30 +253,17 @@ const getAllProducts = async (req, res, next) => {
 
       const options = {
         populate: [
-          {
-            path: "reviews",
-          },
-          {
-            path: "category",
-            select: "name id",
-          },
-          {
-            path: "subCategory",
-            select: "name id",
-          },
-          {
-            path: "subSubCategory",
-            select: "name id",
-          },
-          {
-            path: "company",
-            select: "name id country city",
-          },
+          { path: "reviews" },
+          { path: "category", select: "name id" },
+          { path: "subCategory", select: "name id" },
+          { path: "subSubCategory", select: "name id" },
+          { path: "company", select: "name id country city" },
         ],
         sort: { ...sortOpt },
         offset,
         limit,
       };
+
       const products = await Product.paginate(query, options);
 
       return next(
@@ -1144,7 +1129,7 @@ const disableProduct = async (req, res, next) => {
 const ProductController = {
   getAllProducts,
   filterProducts,
-  getProducts,
+  getPublicProducts,
   getProduct,
   getRelatedProducts,
   getRelatedProductsOnChecout,

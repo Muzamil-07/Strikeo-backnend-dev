@@ -4,7 +4,7 @@ const auth = require("../../middleware/auth.js");
 
 const router = express.Router();
 
-router.get("/", ProductController.getProducts);
+router.get("/", ProductController.getPublicProducts);
 router.get("/s/:slug", ProductController.getProductBySlug);
 router.get("/related/:id", ProductController.getRelatedProducts);
 router.get(
