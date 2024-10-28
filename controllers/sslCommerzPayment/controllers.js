@@ -96,6 +96,7 @@ exports.init = async (req, res, next) => {
         new BadRequestResponse("Selected items not found in your cart")
       );
     }
+    
     if (selectedPayableAmount <= 0) {
       return next(
         new BadRequestResponse(

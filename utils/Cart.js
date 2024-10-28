@@ -12,65 +12,77 @@ const checkStockStatus = (productInfo) => {
   return !!inventory.inStock;
 };
 
-const cartFormatForSelectedItems = async (cart) => {
-  const payload = { ...cart };
-  const items = payload?.items || [];
+const cartFormatForSelectedItems = async (payload, shippingPrice = 0) => {
+  const selectedItems =
+    payload?.items?.filter(
+      (o) => checkStockStatus(o?.variantDetails || o?.product) && o?.selected
+    ) || [];
 
-  let selectedItems = [];
-  let remainingItems = [];
-  let selectedQty = 0;
-  let selectedDiscount = 0;
-  let selectedTotalPrice = 0;
-  let remainingQty = 0;
-  let remainingDiscount = 0;
-  let remainingTotalPrice = 0;
+  const selectedQty = selectedItems?.reduce(
+    (acc, item) => acc + getNumber(item?.quantity),
+    0
+  );
 
-  items.forEach((item) => {
-    const quantity = Math.max(0, getNumber(item?.quantity));
+  const selectedWeight = selectedItems?.reduce(
+    (acc, item) =>
+      acc +
+      getNumber(
+        item?.variantDetails
+          ? item?.variantDetails?.weight
+          : item?.product?.weight
+      ) *
+        getNumber(item?.quantity),
+    0
+  );
 
-    // Extract pricing details from variant or product
-    const pricing = item?.variantDetails
-      ? item?.variantDetails?.pricing
-      : item?.product?.pricing;
-    const discount = Math.max(0, getNumber(pricing?.discount));
-    const totalPrice = Math.max(0, getNumber(pricing?.salePrice) * quantity);
+  // Prioritize variantDetails, fallback to product if not available
+  const selectedDiscount = Math.max(
+    0,
+    selectedItems?.reduce(
+      (acc, item) =>
+        acc +
+        getNumber(
+          (item?.variantDetails
+            ? item?.variantDetails?.pricing?.discount
+            : item?.product?.pricing?.discount) * item?.quantity
+        ),
+      0
+    )
+  );
 
-    if (item?.selected) {
-      selectedItems.push(item);
-      selectedQty += quantity;
-      selectedDiscount += discount;
-      selectedTotalPrice += totalPrice;
-    } else {
-      remainingItems.push(item);
-      remainingQty += quantity;
-      remainingDiscount += discount;
-      remainingTotalPrice += totalPrice;
-    }
-  });
+  const selectedTotalPrice = Math.max(
+    0,
+    selectedItems?.reduce(
+      (acc, item) =>
+        acc +
+        getNumber(
+          (item?.variantDetails
+            ? item?.variantDetails?.pricing?.salePrice
+            : item?.product?.pricing?.salePrice) * item?.quantity
+        ),
+      0
+    )
+  );
+
+  const shippingCost = Math.max(0, getNumber(shippingPrice));
 
   const selectedPayableAmount = Math.max(
     0,
-    selectedTotalPrice - selectedDiscount
-  );
-  const remainingPayableAmount = Math.max(
-    0,
-    remainingTotalPrice - remainingDiscount
+    selectedTotalPrice + shippingCost - selectedDiscount
   );
 
+  const selectedDiscountPercent = selectedTotalPrice
+    ? ((selectedDiscount / selectedTotalPrice) * 100).toFixed(1)
+    : 0;
+
   return {
-    ...payload,
-    totalSelectedItems: selectedItems.length || 0,
-    selectedItems: selectedItems || [],
-    selectedQty: selectedQty || 0,
-    selectedDiscount: selectedDiscount || 0,
-    selectedTotalPrice: selectedTotalPrice || 0,
-    selectedPayableAmount: selectedPayableAmount || 0,
-    totalRemainingItems: remainingItems.length || 0,
-    remainingItems: remainingItems || [],
-    remainingQty: remainingQty || 0,
-    remainingDiscount: remainingDiscount || 0,
-    remainingTotalPrice: remainingTotalPrice || 0,
-    remainingPayableAmount: remainingPayableAmount || 0,
+    selectedItems,
+    selectedQty,
+    selectedWeight,
+    selectedDiscount,
+    selectedTotalPrice,
+    selectedPayableAmount,
+    selectedDiscountPercent,
   };
 };
 
