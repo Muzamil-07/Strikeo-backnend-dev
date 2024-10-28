@@ -17,8 +17,10 @@ const AgentSchema = new mongoose.Schema(
     alias: { type: String },
     gender: { type: String, enum: ["male", "female", "other"], required: true },
     country: { type: String, required: true },
-    region: { type: String, required: true },
+    region: { type: String },
     city: { type: String, required: true },
+    zone: { type: String, required: true },
+    area: { type: String, required: true },
     zipCode: { type: String, required: true },
     dob: { type: Date, required: true },
     contact: {
@@ -43,20 +45,38 @@ const AgentSchema = new mongoose.Schema(
       ref: "Role",
       required: true,
     },
-    // New field: Warehouse the agent is assigned to
-    warehouse: {
-      type: mongoose.Types.ObjectId,
-      ref: "Warehouse",
-    },
+    // warehouse: {
+    //   type: mongoose.Types.ObjectId,
+    //   ref: "Warehouse",
+    // },
     // New field: Regions the agent can deliver to
-    deliveryRegions: [
-      {
-        country: String,
-        state: String,
-        city: String,
-        zipCodes: [String], // Array of supported zip codes
-      },
-    ],
+    deliveryRegions: {
+      type: [
+        {
+          country: { type: String, required: true, enum: ["Bangladesh"] },
+          state: { type: String },
+          city: { type: String, required: true },
+          zone: { type: String, required: true },
+          area: { type: String, required: true },
+          zipCodes: [String],
+        },
+      ],
+      validate: [
+        {
+          validator: function (regions) {
+            return regions.length <= 5;
+          },
+          message: "You can add a maximum of 5 delivery regions",
+        },
+        {
+          validator: function (regions) {
+            return regions.length > 0;
+          },
+          message: "At least one delivery region is required",
+        },
+      ],
+    },
+
     availability: {
       days: {
         type: [String],
@@ -77,9 +97,17 @@ const AgentSchema = new mongoose.Schema(
     },
     vehicle: {
       type: { type: String, enum: ["van", "bike", "car", "truck"] },
-      capacity: Number, // e.g., max weight or volume
+      capacity: {
+        type: Number,
+        min: 0,
+        validate: {
+          validator: Number.isFinite,
+          message: "Capacity must be a positive integer or decimal.",
+        },
+      },
       unit: { type: String, default: "kg", enum: ["kg"] },
     },
+
     reset_token: {
       type: {
         token: String,
@@ -97,13 +125,13 @@ const AgentSchema = new mongoose.Schema(
 AgentSchema.plugin(uniqueValidator, { message: "is already taken." });
 AgentSchema.plugin(mongoosePaginate);
 
-const autoPopulate = function (next) {
-  this.populate("warehouse", "name location storage isActive");
-  next();
-};
+// const autoPopulate = function (next) {
+//   this.populate("warehouse", "name location storage isActive");
+//   next();
+// };
 
-AgentSchema.pre("findOne", autoPopulate);
-AgentSchema.pre("find", autoPopulate);
+// AgentSchema.pre("findOne", autoPopulate);
+// AgentSchema.pre("find", autoPopulate);
 // JWT generation
 AgentSchema.methods.generateJWT = function () {
   return jwt.sign(
@@ -128,7 +156,9 @@ AgentSchema.methods.toAuthJSON = function () {
     alias: this.alias,
     gender: this.gender,
     country: this.country,
-    region: this.region,
+    // region: this.region,
+    zone: this.zone,
+    area: this.area,
     city: this.city,
     zipCode: this.zipCode,
     dob: this.dob,
@@ -138,7 +168,7 @@ AgentSchema.methods.toAuthJSON = function () {
     isVerified: this.isVerified,
     isActive: this.isActive,
     role: this.role,
-    warehouse: this.warehouse, // Added to JSON response
+    // warehouse: this.warehouse, // Added to JSON response
     deliveryRegions: this.deliveryRegions, // Added to JSON response
     vehicle: this.vehicle,
     availability: this.availability,
@@ -155,7 +185,9 @@ AgentSchema.methods.toJSON = function () {
     alias: this.alias,
     gender: this.gender,
     country: this.country,
-    region: this.region,
+    // region: this.region,
+    zone: this.zone,
+    area: this.area,
     city: this.city,
     zipCode: this.zipCode,
     dob: this.dob,
@@ -165,7 +197,7 @@ AgentSchema.methods.toJSON = function () {
     isVerified: this.isVerified,
     isActive: this.isActive,
     role: this.role,
-    warehouse: this.warehouse, // Added to JSON response
+    // warehouse: this.warehouse, // Added to JSON response
     deliveryRegions: this.deliveryRegions, // Added to JSON response
     vehicle: this.vehicle,
     availability: this.availability,

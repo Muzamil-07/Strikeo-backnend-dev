@@ -3,7 +3,7 @@
 const { OkResponse, BadRequestResponse } = require("express-http-response");
 const ChatbotHistory = require("../models/ChatbotHistory");
 const axios = require("axios");
-const apiEndpoint = "http://89.116.32.64:5000/chat";
+const apiEndpoint = process.env.CHATBOT_API_URL;
 const openChatProtocol = async (req, res, next) => {
   const { type } = req.query;
   // List of random bot responses

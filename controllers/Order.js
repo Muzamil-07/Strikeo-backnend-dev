@@ -3,6 +3,7 @@ const validateAddress = require("../utils/AddressValidator.js");
 const Cart = require("../models/Cart.js");
 const User = require("../models/User.js");
 const Product = require("../models/Product.js");
+const Company = require("../models/Company");
 const Order = require("../models/Order.js");
 const Activity = require("../models/Activity.js");
 
@@ -16,7 +17,11 @@ const {
   cartFormatForSelectedItems,
   isMatchingProductOrVariant,
 } = require("../utils/Cart.js");
-const { handleOrderCreateFailedNotify } = require("../utils/mailer.js");
+const {
+  handleOrderCreateFailedNotify,
+  vendorUserOrderNotification,
+  customerOrderStatusNotification,
+} = require("../utils/mailer.js");
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioClient = require("twilio")(accountSid, authToken);
@@ -138,8 +143,7 @@ const getOrderById = async (req, res, next) => {
           },
           {
             path: "agent",
-            select:
-              "firstName lastName contact.phone vehicle availability warehouse",
+            select: "firstName lastName contact.phone vehicle availability",
           },
           {
             path: "payment",
@@ -192,8 +196,7 @@ const getOrderById = async (req, res, next) => {
           },
           {
             path: "agent",
-            select:
-              "firstName lastName contact.phone vehicle availability warehouse",
+            select: "firstName lastName contact.phone vehicle availability",
           },
           {
             path: "payment",
@@ -465,6 +468,8 @@ const confirmUserOrder = async (req, res, next) => {
   try {
     const user = await User.findById(id);
     const order = await Order.findOne({ _id: orderId, customer: id });
+    const company = await Company.findOne({ _id: order.company });
+    const { contact } = company;
 
     if (!user || !order) {
       console.log("Check failed: User or order not found.");
@@ -487,15 +492,6 @@ const confirmUserOrder = async (req, res, next) => {
       );
     }
 
-    // const shippingDetails = order.shippingDetails;
-
-    if (!user.activeBillingAddress) {
-      console.log("Check: No active billing address.");
-    }
-    // else {
-    //   console.log("Check: Active billing address exists, updating.");
-    // }
-
     if (!order.statusHistory) {
       order.statusHistory = new Map();
     }
@@ -505,6 +501,15 @@ const confirmUserOrder = async (req, res, next) => {
 
     await order.save({ validateModifiedOnly: true });
     await user.save();
+
+    ///Email send to vendor after customer is confirmed the order
+    await vendorUserOrderNotification(
+      order.orderNumber,
+      order.items,
+      contact?.email,
+      order.vendorBill,
+      order.shippingDetails
+    );
 
     return res.redirect(
       `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${order?.orderNumber}&bill=${order?.customerBill}`
@@ -521,7 +526,16 @@ const updateOrder = async (req, res, next) => {
   try {
     const orderId = req.params.id;
     const roleType = req.user.role.type;
-    const { status, agent, selectedAgent, order: userOrder } = req.body;
+    const { status, agent, order: userOrder } = req.body;
+
+    if (agent) {
+      if (!mongoose.isValidObjectId(agent))
+        return next(new BadRequestResponse("Agent ID is not valid"));
+
+      const incomingAgent = await Agent.exists({ _id: agent });
+      if (!incomingAgent)
+        return next(new BadRequestResponse("Selected agent not found"));
+    }
 
     const updateOps = {
       Vendor: {
@@ -532,7 +546,7 @@ const updateOrder = async (req, res, next) => {
         update: {
           $set: {
             status: status,
-            agent: agent,
+            ...(agent && { agent }),
             [`statusHistory.${status}`]: new Date(), // Dynamically set the new status with the current date
           },
         },
@@ -552,23 +566,35 @@ const updateOrder = async (req, res, next) => {
       return next(new BadRequestResponse("Permission denied"));
     }
 
-    const updatedOrder = await Order.findOneAndUpdate(
+    const updatedRes = await Order.findOneAndUpdate(
       updateOps.query,
       updateOps.update,
       { new: true }
-    ).populate("agent company");
+    ).populate([
+      { path: "agent", select: "firstName lastName contact" },
+      { path: "company", select: "warehouse name contact" },
+    ]);
+
+    const updatedOrder = JSON.parse(JSON.stringify(updatedRes));
     if (!updatedOrder) {
       return next(new BadRequestResponse("Order not found"));
     }
+    const selectedAgent = updatedOrder?.agent;
+    if (agent && !selectedAgent) {
+      return next(new BadRequestResponse("Selected agent not found"));
+    }
 
-    const orderAgent = await Agent.findById(agent);
-    if (orderAgent) {
+    if (selectedAgent) {
+      if (!selectedAgent?.contact?.phone?.trim()) {
+        return next(new BadRequestResponse("Agent's contact phone not found"));
+      }
+
       try {
         const messageBody = createMessageBody(updatedOrder, selectedAgent);
         const message = await twilioClient.messages.create({
           body: messageBody,
           from: "whatsapp:" + process.env.TWILIO_PHONE,
-          to: "whatsapp:" + orderAgent.contact.phone,
+          to: "whatsapp:" + selectedAgent?.contact?.phone,
         });
         console.log(
           "Message sent to agent on WhatsApp successfully!",
@@ -592,7 +618,7 @@ const updateOrder = async (req, res, next) => {
           type: "Updated Order",
           "Updated Order": {
             orderNo: updatedOrder?.orderNumber,
-            message: `assigned order no. ${updatedOrder?.orderNumber} to ${orderAgent?.firstName} ${orderAgent?.lastName}`,
+            message: `assigned order no. ${updatedOrder?.orderNumber} to ${selectedAgent?.firstName} ${selectedAgent?.lastName}`,
           },
         });
         await activity.save();
@@ -611,10 +637,24 @@ const updateOrder = async (req, res, next) => {
       }
     }
 
+    ///Order Status Changing: Customer Email Notification
+    // orderUpdateStatusForCustomTemplate
+    const { orderNumber, items, customer, customerBill } = updatedOrder;
+    const orderUser = await User.findById(customer);
+    await customerOrderStatusNotification(
+      orderNumber,
+      items,
+      orderUser?.email,
+      customerBill,
+      status
+    );
+
     return next(new OkResponse(updatedOrder, "Order updated successfully!"));
   } catch (error) {
     console.log(error);
-    return next(new BadRequestResponse("Something went wrong"));
+    return next(
+      new BadRequestResponse(error?.message || "Something went wrong")
+    );
   }
 };
 

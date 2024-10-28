@@ -15,11 +15,13 @@ const WarehouseSchema = new mongoose.Schema(
     // Location Details
     location: {
       addressLine: { type: String, required: true, trim: true }, // Added trim
-      city: { type: String, required: true, trim: true }, // Added trim
-      region: { type: String, required: true, trim: true }, // Added trim
+      city: { type: String, required: true },
+      region: { type: String, trim: true }, // Added trim
+      zone: { type: String, required: true },
+      area: { type: String, required: true },
       country: {
         type: String,
-        enum: ["Bangladesh"], // Expandable for future needs
+        enum: ["Bangladesh"],
         default: "Bangladesh",
         trim: true, // Added trim
       },

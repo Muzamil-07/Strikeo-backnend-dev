@@ -121,6 +121,8 @@ const createAgent = async (req, res, next) => {
       gender: true,
       country: true,
       region: true,
+      zone: true,
+      area: true,
       dob: true,
       contact: true,
       emergencyContact: true,
@@ -133,10 +135,12 @@ const createAgent = async (req, res, next) => {
           country: true,
           state: true,
           city: true,
+          zone: true,
+          area: true,
           zipCodes: true, // Array of supported zip codes
         },
       ],
-      warehouse: true,
+      // warehouse: true,
       availability: {
         days: true,
         startTime: true,
@@ -174,10 +178,6 @@ const updateAgentById = async (req, res, next) => {
   if (!id) return next(new BadRequestResponse("Agent ID is required"));
 
   try {
-    const agent = await Agent.findById(id);
-
-    if (!agent) return next(new BadRequestResponse("Agent not found"));
-
     const agentSchema = {
       firstName: true,
       lastName: true,
@@ -185,6 +185,8 @@ const updateAgentById = async (req, res, next) => {
       gender: true,
       country: true,
       region: true,
+      zone: true,
+      area: true,
       dob: true,
       contact: true,
       emergencyContact: true,
@@ -197,10 +199,12 @@ const updateAgentById = async (req, res, next) => {
           country: true,
           state: true,
           city: true,
+          zone: true,
+          area: true,
           zipCodes: true, // Array of supported zip codes
         },
       ],
-      warehouse: true,
+      // warehouse: true,
       availability: {
         days: true,
         startTime: true,
@@ -216,11 +220,13 @@ const updateAgentById = async (req, res, next) => {
       { ...req?.body },
       agentSchema
     );
-    const updatedAgent = await Agent.updateOne(
-      { _id: id },
-      { ...updatePayload }
-    );
+    const updatedAgent = await Agent.findByIdAndUpdate(
+      id,
 
+      { ...updatePayload },
+      { new: true }
+    );
+    if (!updatedAgent) return next(new BadRequestResponse("Agent not found"));
     return next(new OkResponse(updatedAgent));
   } catch (error) {
     console.log(error);

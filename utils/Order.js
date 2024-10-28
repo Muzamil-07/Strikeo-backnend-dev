@@ -186,13 +186,14 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 
   // Arrays to track removed items for notifications
   const removedItemsOutOfStock = [];
+  const inactiveItems = [];
   let notFoundCount = 0;
   const removedEmptyOrders = [];
 
   for (const item of selectedItems) {
     // Check if product exists and is active
     const product = item?.product;
-    if (!product || !product?.isActive) {
+    if (!product) {
       notFoundCount++; // Track not found items
       continue; // Skip to next item (removing not found items)
     }
@@ -203,9 +204,21 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
     if (item?.variantSKU) {
       const variant = item?.variantDetails;
 
-      if (!variant || !variant?.isActive) {
+      if (!variant) {
         notFoundCount++; // Track if variant not found
         continue; // Skip to next item (removing not found variant)
+      }
+
+      if (!variant?.isActive) {
+        inactiveItems.push({
+          name: `${product?.name} Variant: ${variant?.variantName}`,
+          price: `${
+            getNumber(variant?.pricing?.salePrice) -
+            getNumber(variant?.pricing?.discount)
+          } X ${quantity}`,
+        });
+        isValidItem = false;
+        continue;
       }
 
       // Check stock for variants
@@ -238,6 +251,19 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
         continue; // Skip to next item (removing out-of-stock variant)
       }
     } else {
+      if (!product?.isActive) {
+        inactiveItems.push({
+          name: product?.name,
+          price: `${Math.max(
+            0,
+            getNumber(product?.pricing?.salePrice) -
+              getNumber(product?.pricing?.discount)
+          )} X ${quantity}`,
+        });
+        isValidItem = false;
+        continue;
+      }
+
       // Check stock for the product if no variant
       if (product?.inventory?.trackInventory) {
         const productStock = getNumber(product?.inventory?.stock);
@@ -327,7 +353,14 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
     console.log(emailMsg);
     removedMessages.push(emailMsg);
   }
-
+  if (inactiveItems.length > 0) {
+    const emailMsg = {
+      message: `The following items are inactive and may not be available for purchase:`,
+      items: inactiveItems,
+    };
+    console.log(emailMsg);
+    removedMessages.push(emailMsg);
+  }
   if (notFoundCount > 0) {
     const emailMsg = {
       message: `Unfortunately, we were unable to locate ${notFoundCount} item(s) in our inventory. They were not found.`,

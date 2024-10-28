@@ -11,6 +11,7 @@ const User = require("../models/User.js");
 const { sendEmail } = require("../utils/mailer.js");
 const Role = require("../models/Role.js");
 const { default: mongoose } = require("mongoose");
+const filterObjectBySchema = require("../utils/filterObject.js");
 
 const getAllVendors = async (req, res, next) => {
   try {
@@ -81,79 +82,61 @@ const getVendorById = async (req, res, next) => {
 };
 
 const createVendor = async (req, res, next) => {
-  const validationError = validateVendorData(req.body);
-  if (validationError) return next(new BadRequestResponse(validationError));
-
   try {
-    const {
-      firstName,
-      lastName,
-      alias,
-      gender,
-      country,
-      dob,
-      contact,
-      emergencyContact,
-      profileImage,
-      company,
-    } = req.body;
+    const { contact, company } = req.body;
 
-    let isCompanyExists;
-    if (company) {
-      isCompanyExists = await Company.findById(company);
+    // Find the Vendor role, expected to be of type "Vendor" and name "Admin"
+    const vendorRole = await Role.findOne({ type: "Vendor", name: "Admin" });
+    if (!vendorRole) {
+      return next(new BadRequestResponse("Vendor role not found"));
     }
 
-    // if (!isCompanyExists)
-    //   return next(new BadRequestResponse("Company not found"));
-
-    const vendorRole = await Role.findOne({
-      type: "Vendor",
-      name: "Admin",
-    });
-
-    // console.log(vendorRole);
-    if (!vendorRole)
-      return next(new BadRequestResponse("Vendor role not found"));
-
-    const isVendorExists = await Vendor.findOne({
+    // Check if a vendor with the same email already exists
+    const isVendorExists = await Vendor.exists({
       "contact.email": contact.email,
     });
-
-    if (isVendorExists)
+    if (isVendorExists) {
       return next(new BadRequestResponse("Email already taken!"));
-
-    const vendor = new Vendor({
-      firstName,
-      lastName,
-      gender,
-      country,
-      dob,
-      contact,
-      profileImage,
-      company,
-      role: vendorRole.id,
-    });
-
-    if (alias) vendor.alias = alias;
-    if (emergencyContact) vendor.emergencyContact = emergencyContact;
-    if (company && isCompanyExists) {
-      const token =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-      vendor.reset_token = {
-        token,
-        link: `${process.env.BACKEND_URL}/create-password?email=${contact.email}&token=${token}`,
-        // 2 week token for password generation
-        expires: Date.now() + 14 * 24 * 60 * 60 * 1000,
-      };
-      sendEmail(vendor, "Create Password", { createPassword: true });
     }
 
+    // Define fields allowed for the vendor schema
+    const vendorSchema = {
+      firstName: true,
+      lastName: true,
+      alias: true,
+      gender: true,
+      country: true,
+      dob: true,
+      contact: {
+        phone: true,
+        secondaryPhone: true,
+        email: true,
+        address: true,
+      },
+      emergencyContact: {
+        phone: true,
+        name: true,
+      },
+      profileImage: true,
+    };
+
+    // Filter the payload based on the vendorSchema
+    const filteredPayload = await filterObjectBySchema(req.body, vendorSchema);
+
+    // Create the vendor object
+    const vendor = new Vendor({
+      ...filteredPayload,
+      role: vendorRole._id,
+    });
+
+    // Save the vendor to the database
     await vendor.save();
     return next(new OkResponse(vendor));
   } catch (error) {
-    console.log(error);
-    return next(new BadRequestResponse("Something went wrong"));
+    console.error("Error creating vendor:", error);
+    return next(
+      new BadRequestResponse(error?.message || "Something went wrong")
+    );
   }
 };
 
@@ -198,48 +181,56 @@ const resendPasswordGenMail = async (req, res, next) => {
 
 const updateVendorById = async (req, res, next) => {
   const { id } = req.params;
-
-  if (!id) return next(new BadRequestResponse("Vendor ID is required"));
+  if (!id || !mongoose.isValidObjectId(id))
+    return next(new BadRequestResponse("Vendor ID is required"));
 
   try {
-    const {
-      firstName,
-      lastName,
-      alias,
-      country,
-      gender,
-      dob,
-      contact,
-      emergencyContact,
-      profileImage,
-      roleId,
-      password,
-    } = req.body;
-    const vendor = await Vendor.findById(id);
+    const { contact, password = "" } = req.body;
 
+    const vendor = await Vendor.findById(id);
     if (!vendor) return next(new BadRequestResponse("Vendor not found"));
 
-    let isEmailChanged;
+    const vendorSchema = {
+      firstName: true,
+      lastName: true,
+      alias: true,
+      gender: true,
+      country: true,
+      dob: true,
+      contact: {
+        phone: true,
+        secondaryPhone: true,
+        email: true,
+        address: true,
+      },
+      emergencyContact: {
+        phone: true,
+        name: true,
+      },
+      profileImage: true,
+    };
 
-    if (vendor.contact.email !== contact.email) {
+    // Filter the payload based on the schema
+    const updatePayload = await filterObjectBySchema(req.body, vendorSchema);
+
+    let isEmailChanged = false;
+
+    // Check for email change
+    if (contact?.email && vendor.contact.email !== contact.email) {
       isEmailChanged = true;
-      const isUserExists = await Vendor.findOne({
+      const existingUser = await Vendor.findOne({
         "contact.email": contact.email,
       });
-
-      if (isUserExists)
-        return next(new BadRequestResponse("User already exists"));
+      if (existingUser)
+        return next(new BadRequestResponse("New is Email already in use"));
     }
-    if (firstName) vendor.firstName = firstName;
-    if (lastName) vendor.lastName = lastName;
-    vendor.alias = alias;
-    if (gender) vendor.gender = gender;
-    if (country) vendor.country = country;
-    if (dob) vendor.dob = dob;
-    if (contact) vendor.contact = contact;
-    if (emergencyContact) vendor.emergencyContact = emergencyContact;
-    if (profileImage) vendor.profileImage = profileImage;
 
+    // Update the fields from the filtered payload
+    Object.keys(updatePayload).forEach((key) => {
+      vendor[key] = updatePayload[key];
+    });
+
+    // Password handling
     if (password) {
       if (!vendor.validPassword(password) && !isEmailChanged) {
         vendor.new_password = password;
@@ -248,30 +239,37 @@ const updateVendorById = async (req, res, next) => {
       vendor.hash = password;
       vendor.setPassword();
     }
-    // Send verification email again if super admin has updated the vendor's email before vendor verified
+
+    // Handle email verification process if email has changed and the vendor is not verified
     if (isEmailChanged && !vendor.isVerified) {
       const token =
         Math.random().toString(36).substring(2, 15) +
         Math.random().toString(36).substring(2, 15);
       vendor.reset_token = {
         token,
-        link: `${process.env.BACKEND_URL}/create-password?email=${vendor.contact.email}&token=${token}`,
-        // 1 week token for password generation
-        expires: Date.now() + 14 * 24 * 60 * 60 * 1000,
+        link: `${process.env.BACKEND_URL}/create-password?email=${contact.email}&token=${token}`,
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 1-week expiration
       };
       sendEmail(vendor, "Create Password", { createPassword: true });
     }
+
     await vendor.save();
-    // Send email of password change to new email of vendor
+
+    // Notify verified vendor about email change
     if (isEmailChanged && vendor.isVerified) {
       sendEmail(vendor, "Change Email", { changeEmail: true });
     }
+
     return next(new OkResponse(vendor));
   } catch (error) {
-    console.log(error);
-    return next(new BadRequestResponse("Something went wrong"));
+    console.error(error);
+    return next(
+      new BadRequestResponse(error?.message || "Something went wrong")
+    );
   }
 };
+
+module.exports = { updateVendorById };
 
 const blockVendorById = async (req, res, next) => {
   const { id } = req.params;

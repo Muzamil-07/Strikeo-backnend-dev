@@ -11,6 +11,8 @@ const validateVendorData = require("../utils/VendorValidator.js");
 const Role = require("../models/Role.js");
 const { sendEmail } = require("../utils/mailer.js");
 const Activity = require("../models/Activity.js");
+const { default: mongoose } = require("mongoose");
+const filterObjectBySchema = require("../utils/filterObject.js");
 
 const getAllVendors = async (req, res, next) => {
   try {
@@ -190,122 +192,137 @@ const getCompanyById = async (req, res, next) => {
 const updateCompanyById = async (req, res, next) => {
   const { id } = req.params;
 
-  if (!id) return next(new BadRequestResponse("Company ID is required"));
+  if (!id || !mongoose.isValidObjectId(id))
+    return next(new BadRequestResponse("Company ID is required"));
 
   try {
     const company = await Company.findById(id);
-
     if (!company) return next(new BadRequestResponse("Company not found"));
 
-    const {
-      name,
-      description,
-      contact,
-      country,
-      city,
-      address,
-      principalPOB,
-      postalAddress,
-      website,
-      logo,
-    } = req.body;
+    // Define allowed fields for updating the company
+    const companySchema = {
+      name: true,
+      contact: {
+        phone: true,
+        email: true,
+      },
+      country: true,
+      address: true,
+      principalPOB: true,
+      postalAddress: true,
+      city: true,
+      zipCode: true,
+      description: true,
+      website: true,
+      warehouse: true,
+      logo: true,
+    };
 
-    if (name) company.name = name;
-    if (description) company.description = description;
-    if (contact) company.contact = contact;
-    if (country) company.country = country;
-    if (city) company.city = city;
-    if (address) company.address = address;
-    if (principalPOB) company.principalPOB = principalPOB;
-    if (postalAddress) company.postalAddress = postalAddress;
-    if (website) company.website = website;
-    if (logo) company.logo = logo;
+    // Filter the payload based on the schema
+    const updatePayload = await filterObjectBySchema(req.body, companySchema);
 
+    // Update company fields with the filtered payload
+    Object.entries(updatePayload).forEach(([key, value]) => {
+      company[key] = value;
+    });
+
+    // Save updated company data
     await company.save();
-
+    await company.populate("warehouse", "name");
     return next(new OkResponse(company));
   } catch (error) {
-    console.log(error);
-    return next(new BadRequestResponse("Something went wrong"));
+    console.error("Error updating company:", error);
+    return next(
+      new BadRequestResponse(error.message || "Something went wrong")
+    );
   }
 };
 
 const createCompany = async (req, res, next) => {
-  const validationError = validateCompany(req.body);
-
-  if (validationError) return next(new BadRequestResponse(validationError));
-
   try {
-    const {
-      name,
-      vendor = null,
-      description,
-      contact,
-      country,
-      city,
-      zipCode,
-      principalPOB,
-      address,
-      postalAddress,
-      website,
-      logo,
-    } = req.body;
+    const { name, vendor = null } = req.body;
 
-    const companyWithSameName = await Company.findOne({ name: name.trim() });
+    // Check if a company with the same name already exists
+    const companyWithSameName = await Company.exists({ name: name.trim() });
+    if (companyWithSameName) {
+      return next(
+        new BadRequestResponse("Company already exists with this name")
+      );
+    }
 
-    if (companyWithSameName)
-      return next(new BadRequestResponse("Company already exists"));
-
-    const company = new Company({
-      name,
+    const companySchema = {
+      name: true,
       contact: {
-        phone: contact.phone,
-        email: contact.email,
+        phone: true,
+        email: true,
       },
-      country,
-      address,
-      principalPOB,
-      postalAddress,
-      city,
-      zipCode,
-      description,
-      website,
-      logo,
+      country: true,
+      address: true,
+      principalPOB: true,
+      postalAddress: true,
+      city: true,
+      zipCode: true,
+      description: true,
+      website: true,
+      warehouse: true,
+      logo: true,
+    };
+
+    // Filter the payload based on the schema
+    const updatePayload = await filterObjectBySchema(req.body, companySchema);
+    // Create the new company document
+    const company = new Company({
+      ...updatePayload,
     });
 
+    // Save the company to the database
     await company.save();
-    if (company && vendor) {
-      let findedVendor = await Vendor.findById(vendor);
-      findedVendor = JSON.parse(JSON.stringify(findedVendor));
-      const token =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-      const reset_token = {
-        token,
-        link: `${process.env.BACKEND_URL}/create-password?email=${findedVendor?.contact?.email}&token=${token}`,
-        // 1 week token for password generation
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-      };
+    await company.populate("warehouse", "name");
 
-      const updatedVendor = await Vendor.updateOne(
-        { _id: vendor },
-        {
-          company: company?.id,
-          status: "completed",
-          reset_token,
+    // If a vendor ID is provided, associate the vendor with the company
+    if (vendor) {
+      const findedVendor = await Vendor.findById(vendor);
+      if (findedVendor) {
+        const token =
+          Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+        const reset_token = {
+          token,
+          link: `${process.env.BACKEND_URL}/create-password?email=${findedVendor.contact.email}&token=${token}`,
+          // 1-week expiration for the password generation token
+          expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        };
+
+        const updatedVendor = await Vendor.updateOne(
+          { _id: vendor },
+          {
+            company: company._id,
+            status: "completed",
+            reset_token,
+          }
+        );
+
+        // Send email if the vendor was successfully updated
+        if (updatedVendor.modifiedCount > 0) {
+          sendEmail(
+            { ...findedVendor.toObject(), reset_token },
+            "Create Password",
+            {
+              createPassword: true,
+            }
+          );
         }
-      );
-      if (updatedVendor) {
-        sendEmail({ ...findedVendor, reset_token }, "Create Password", {
-          createPassword: true,
-        });
+      } else {
+        console.log("Vendor not found for the provided vendor ID.");
       }
     }
 
     return next(new OkResponse(company));
   } catch (error) {
-    console.log(error);
-    return next(new BadRequestResponse("Something went wrong"));
+    console.error("Error creating company:", error);
+    return next(
+      new BadRequestResponse(error?.message || "Something went wrong")
+    );
   }
 };
 

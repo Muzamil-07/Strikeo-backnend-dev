@@ -1,8 +1,8 @@
 const { getNumber } = require("./stringsNymber");
 
 function createMessageBody(order, agent) {
-  const company = order?.company || {};
-  const warehouse = order?.agent?.warehouse || {};
+  const company = order?.company || null;
+  const warehouse = company?.warehouse || null;
 
   const orderNumber = order?.orderNumber || "N/A";
   const shippingDetails = order?.shippingDetails || {};
@@ -54,21 +54,27 @@ function createMessageBody(order, agent) {
   }
 
   const pickupAddress = ` 
-Name: ${warehouse?.name || "Warehouse name not available"}
-Address Line: ${warehouse?.location?.addressLine || "Address not available"}
-City: ${warehouse?.location?.city || "City not available"}, 
-ZipCode: ${warehouse?.location?.zipCode || "Zip code not available"}`;
+Name: ${warehouse?.name || "Warehouse name not provided"},
+Country: ${warehouse?.location?.country || "Country not provided"}, 
+City: ${warehouse?.location?.city || "City not provided"}, 
+Zone: ${warehouse?.location?.zone || "Zone not provided"}, 
+Area: ${warehouse?.location?.area || "Area not provided"}, 
+ZipCode: ${warehouse?.location?.zipCode || "Zip code not provided"},
+Address Line: ${warehouse?.location?.addressLine || "Address not provided"}.`;
 
   const customerDetails = `
-Name: ${shippingDetails?.firstName || "N/A"} ${shippingDetails?.lastName || ""}
-Email: ${shippingDetails?.email || "N/A"}
-Phone: ${shippingDetails?.phone || "N/A"}
-Address: ${shippingDetails?.address || "N/A"}
-City: ${shippingDetails?.city || "N/A"}
-State: ${shippingDetails?.state || "N/A"}
-Country: ${shippingDetails?.country || "N/A"}
-Zip Code: ${shippingDetails?.zipCode || "N/A"}
-Special Instructions: ${shippingDetails?.instruction || "None"}`;
+Name: ${shippingDetails?.firstName || "N/A"} ${
+    shippingDetails?.lastName || "N/A"
+  },
+Email: ${shippingDetails?.email || "N/A"},
+Phone: ${shippingDetails?.phone || "N/A"},
+Country: ${shippingDetails?.country || "N/A"},
+City: ${shippingDetails?.city || "N/A"},
+Zone: ${shippingDetails?.zone || "N/A"}, 
+Area: ${shippingDetails?.area || "N/A"}, 
+Zip Code: ${shippingDetails?.zipCode || "N/A"},
+Address: ${shippingDetails?.address || "N/A"},
+Special Instructions: ${shippingDetails?.instruction || "None"}.`;
 
   return `
 *Order Pickup Details for Order #${orderNumber}*
@@ -81,7 +87,7 @@ We kindly request your assistance in picking up an order from the assigned wareh
 
 *Pickup Address:*
 ${pickupAddress}
-Contact: ${company?.contact?.phone || "N/A"}, ${
+Company Contact: ${company?.contact?.phone || "N/A"}, ${
     company?.contact?.email || "N/A"
   }
 
@@ -96,7 +102,7 @@ Please ensure prompt and secure handling of the order during pickup and delivery
 Thank you for your service!
 
 Best regards,
-_${company?.name || "The Strikeo Company"}_`;
+_${company?.name || "Company name not available"}`;
 }
 
 exports.createMessageBody = createMessageBody;

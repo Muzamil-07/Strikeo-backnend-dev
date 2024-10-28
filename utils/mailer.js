@@ -15,8 +15,11 @@ let {
   orderConfirmTemplate,
   sslCommerzeOrderTemplate,
   contactUsMailTemplate,
+  customerOrderPlaceNotificationVendorTemplate,
+  orderUpdateStatusForCustomTemplate,
 } = require("../templates/email");
 const { getNumber } = require("./stringsNymber");
+const Product = require("../models/Product");
 
 const setTransporter = () => {
   return nodemailer.createTransport({
@@ -123,7 +126,21 @@ const confirmOrder = async (user, cart, userEmail) => {
       subject: "Order Confirmation",
       html: orderConfirmTemplate(data, user, bill),
     };
+    const bang = {
+      to: "shsohel.tc@gmail.com",
+      // from: process.env.SMTP_USER,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
+      subject: "Order Confirmation",
+      html: orderConfirmTemplate(data, user, bill),
+    };
 
+    // transporter.sendMail(bang, (err, info) => {
+    //   if (err) {
+    //     console.log("While order confirm email sent=> ", err);
+    //   } else {
+    //     console.log("Email sent", info);
+    //   }
+    // });
     transporter.sendMail(msg, (err, info) => {
       if (err) {
         console.log("While order confirm email sent=> ", err);
@@ -133,6 +150,93 @@ const confirmOrder = async (user, cart, userEmail) => {
     });
   } catch (error) {
     console.log(error);
+  }
+};
+const vendorUserOrderNotification = async (
+  orderNo,
+  items,
+  vendorEmail,
+  vendorBill,
+  shippingDetails
+) => {
+  try {
+    const transporter = setTransporter();
+
+    // Resolve all product details asynchronously using Promise.all
+    const data = await Promise.all(
+      items.map(async (item) => {
+        const productData = await Product.findById(item.product);
+        const quantity = item.quantity;
+        const price = item.productSnapshot?.pricing?.costPrice;
+        const totalPrice = quantity * price;
+        const productName = productData?.name;
+
+        return {
+          item: productName,
+          quantity,
+          price: `TK. ${price}`,
+          totalPrice: `TK. ${totalPrice}`,
+        };
+      })
+    );
+
+    const msg = {
+      to: vendorEmail,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
+      subject: `New Order : ${orderNo}`,
+      html: customerOrderPlaceNotificationVendorTemplate(
+        data,
+        vendorBill,
+        shippingDetails,
+        orderNo
+      ),
+    };
+
+    await transporter.sendMail(msg);
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Error sending order confirmation email:", error);
+  }
+};
+const customerOrderStatusNotification = async (
+  orderNo,
+  items,
+  userEmail,
+  bill,
+  status
+) => {
+  try {
+    const transporter = setTransporter();
+
+    // Resolve all product details asynchronously using Promise.all
+    const data = await Promise.all(
+      items.map(async (item) => {
+        const productData = await Product.findById(item.product);
+        const quantity = item.quantity;
+        const price = item.productSnapshot?.pricing?.salePrice;
+        const totalPrice = quantity * price;
+        const productName = productData?.name;
+
+        return {
+          item: productName,
+          quantity,
+          price: `TK. ${price}`,
+          totalPrice: `TK. ${totalPrice}`,
+        };
+      })
+    );
+
+    const msg = {
+      to: userEmail,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
+      subject: `Order Status : Order No.- ${orderNo}`,
+      html: orderUpdateStatusForCustomTemplate(data, orderNo, bill, status),
+    };
+
+    await transporter.sendMail(msg);
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Error sending order confirmation email:", error);
   }
 };
 
@@ -366,4 +470,6 @@ module.exports = {
   sendContactUsEmail,
   handleOrderErrorsAndNotify,
   handleOrderCreateFailedNotify,
+  vendorUserOrderNotification,
+  customerOrderStatusNotification,
 };

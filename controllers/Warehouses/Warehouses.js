@@ -13,6 +13,8 @@ const warehouseSchema = {
     addressLine: true,
     city: true,
     region: true,
+    zone: true,
+    area: true,
     country: true, // Default country can be handled in your logic
     zipCode: true,
     geoCoordinates: {
