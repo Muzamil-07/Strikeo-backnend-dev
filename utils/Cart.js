@@ -6,10 +6,10 @@ const checkStockStatus = (productInfo) => {
   if (!inventory) return false;
 
   if (inventory?.trackInventory) {
-    return inventory?.allowBackorders ? true : getNumber(inventory.stock) > 0;
+    return inventory?.allowBackorders ? true : getNumber(inventory?.stock) > 0;
   }
 
-  return !!inventory.inStock;
+  return !!inventory?.inStock;
 };
 
 const cartFormatForSelectedItems = async (payload, shippingPrice = 0) => {
@@ -109,7 +109,7 @@ const calculateTotalBill = async (tempItems) => {
     if (item.variantSKU) {
       // Find the variant price
       const variant = product?.variants?.find(
-        (variant) => variant.sku === item.variantSKU
+        (variant) => variant?.sku === item.variantSKU
       );
       if (variant) {
         itemPrice =

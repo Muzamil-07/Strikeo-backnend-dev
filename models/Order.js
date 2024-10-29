@@ -385,7 +385,14 @@ const OrderSchema = new mongoose.Schema(
         enum: ["Standard", "Express", "Same-Day", "Pickup Point"],
         default: "Standard",
       },
-      shippingCost: { type: Number, default: 0 },
+      shippingCost: {
+        type: Number,
+        default: 0,
+        min: 0,
+        set: function (val) {
+          return validatePositiveNumber(val);
+        },
+      },
       estimatedDelivery: { type: Date },
     },
     orderedAt: {
