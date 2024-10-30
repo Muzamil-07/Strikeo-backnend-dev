@@ -380,7 +380,7 @@ const createOrder = async (req, res, next) => {
 
         // If order creation was successful
         if (order) {
-          completedOrders.push(order._id);
+          completedOrders.push(orderData);
 
           // Track successful items and amounts
           successfullyCreatedItems.push(...orderData.items);

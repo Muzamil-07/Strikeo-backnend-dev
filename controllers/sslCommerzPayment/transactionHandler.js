@@ -201,9 +201,10 @@ const captureTransaction = async (data, ipn_Payload) => {
       // Save order and track successes/failures
       const order = new Order({
         customer: getProductId(user),
-        company: orderData?.company,
+        company: getProductId(orderData.company),
         items: orderData.items, // Include all items for this order
         customerBill: orderData.totalAmount,
+        vendorBill: orderData.vendorAmount,
         payment: getProductId(payment),
         shippingDetails: activeBillingAddress,
         isConfirmed: true,

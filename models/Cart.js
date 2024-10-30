@@ -40,7 +40,13 @@ const CartSchema = new mongoose.Schema(
 CartSchema.plugin(uniqueValidator, { message: "is already taken." });
 
 const autoPopulate = function (next) {
-  this.populate("items.product");
+  this.populate({
+    path: "items.product",
+    populate: {
+      path: "company",
+      select: "name",
+    },
+  });
   next();
 };
 
