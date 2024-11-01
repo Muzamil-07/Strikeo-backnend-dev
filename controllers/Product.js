@@ -102,7 +102,7 @@ const getPublicProducts = async (req, res, next) => {
       sortOptions["variants.pricing.salePrice"] = 1;
       sortOptions["pricing.salePrice"] = 1;
     } else if (sort === "recent") {
-      sortOptions.createdAt = -1; // Descending (most recent first)
+      sortOptions.publishedAt = -1; // Descending (most recent first)
     }
 
     if (all) {
@@ -430,7 +430,12 @@ const getRelatedProductsOnChecout = async (req, res, next) => {
           status: "Published",
         },
       },
-      { $sample: { size: limit } },
+      {
+        $sort: { publishedAt: -1 },
+      },
+      {
+        $sample: { size: limit },
+      },
     ]);
 
     return next(new OkResponse(relatedProducts));
