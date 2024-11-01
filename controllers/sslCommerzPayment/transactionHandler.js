@@ -198,7 +198,10 @@ const captureTransaction = async (data, ipn_Payload) => {
         JSON.parse(JSON.stringify(activeBillingAddress)),
         orderData.items
       );
-
+      const shippingWithDetails = JSON.parse(
+        JSON.stringify(activeBillingAddress)
+      );
+      shippingWithDetails.shippingCost = shippingCost;
       // Save order and track successes/failures
       const order = new Order({
         customer: getProductId(user),
@@ -207,9 +210,7 @@ const captureTransaction = async (data, ipn_Payload) => {
         customerBill: orderData.totalAmount,
         vendorBill: orderData.vendorAmount,
         payment: getProductId(payment),
-        shippingDetails: JSON.parse(
-          JSON.stringify({ ...activeBillingAddress, shippingCost })
-        ),
+        shippingDetails: shippingWithDetails,
         isConfirmed: true,
       });
 
