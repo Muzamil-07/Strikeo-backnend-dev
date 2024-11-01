@@ -57,7 +57,7 @@ const getShippingCost = async (shippingDetails, items) => {
         getNumber(item?.quantity),
     0
   );
-console.log('********************',selectedWeight)
+
   if (selectedWeight) {
     const priceRequestBody = {
       store_id: 217213,

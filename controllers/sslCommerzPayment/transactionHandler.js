@@ -189,7 +189,7 @@ const captureTransaction = async (data, ipn_Payload) => {
   const failedOrders = [];
   let successfullyCreatedItems = [];
   let successfullyCreatedAmount = 0;
-  let successfullyCreatedshippingCost = 0;
+  // let successfullyCreatedshippingCost = 0;
 
   // Process grouped orders
   for (const orderData of orders) {
@@ -198,12 +198,7 @@ const captureTransaction = async (data, ipn_Payload) => {
         JSON.parse(JSON.stringify(activeBillingAddress)),
         orderData.items
       );
-      activeBillingAddress.shippingCost = shippingCost;
-      console.log(
-        "-------------------------",
-        activeBillingAddress.shippingCost,
-        shippingCost
-      );
+
       // Save order and track successes/failures
       const order = new Order({
         customer: getProductId(user),
@@ -212,7 +207,7 @@ const captureTransaction = async (data, ipn_Payload) => {
         customerBill: orderData.totalAmount,
         vendorBill: orderData.vendorAmount,
         payment: getProductId(payment),
-        shippingDetails: activeBillingAddress,
+        shippingDetails: { ...activeBillingAddress, shippingCost },
         isConfirmed: true,
       });
 
@@ -220,7 +215,7 @@ const captureTransaction = async (data, ipn_Payload) => {
       completedOrders.push(order._id);
       successfullyCreatedItems.push(...orderData.items); // Track successfully created items
       successfullyCreatedAmount += orderData.totalAmount; // Accumulate successful order amounts
-      successfullyCreatedshippingCost += orderData.shippingCost; // Accumulate successful shipping amounts
+      // successfullyCreatedshippingCost += orderData.shippingCost; // Accumulate successful shipping amounts
     } catch (error) {
       orderData.message =
         "Unfortunately, we are unable to place your order for the following items.";
