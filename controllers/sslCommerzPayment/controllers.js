@@ -16,7 +16,10 @@ const { captureTransaction } = require("./transactionHandler.js");
 const { tranStatusFormat } = require("./initDataProcess.js");
 const Cart = require("../../models/Cart.js");
 const { cartFormatForSelectedItems } = require("../../utils/Cart.js");
-const { sslczNotification } = require("../../utils/mailer.js");
+const {
+  sslczNotification,
+  handleEmailAfterPaymentAndOrderDone,
+} = require("../../utils/mailer.js");
 const { handleTransactionProcessNotify } = require("../../utils/Order.js");
 // const dummyTranId = "SSLCZ_TEST_59bd349436a7k"; //change its last char if id already taken
 const getPaymentOrder = async (paymentId) => {
@@ -96,7 +99,7 @@ exports.init = async (req, res, next) => {
         new BadRequestResponse("Selected items not found in your cart")
       );
     }
-    
+
     if (selectedPayableAmount <= 0) {
       return next(
         new BadRequestResponse(
@@ -196,6 +199,8 @@ exports.success = async (req, res, next) => {
   console.log(`Payemnt Success with transaction id => ${req?.body?.tran_id}`);
   const data = await getPaymentOrder(req?.body?.tran_id);
   const orderNumber = data?.orders.map((o) => `${o?.orderNumber}`);
+  ///Email notification about orders when transaction completed and order placed successfully
+  await handleEmailAfterPaymentAndOrderDone(data);
   // if (!orderNumber) {
   //   return res.redirect(
   //     `${FRONTEND_URL}/checkout/payment/failed?tran_id=${req?.body?.tran_id}&amount=${req?.body?.amount}&order=${orderNumber}`

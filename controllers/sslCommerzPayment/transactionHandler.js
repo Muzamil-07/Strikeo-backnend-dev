@@ -10,7 +10,6 @@ const {
 const { tranStatusFormat } = require("./initDataProcess");
 const {
   cartFormatForSelectedItems,
-  isMatchingProductOrVariant,
 } = require("../../utils/Cart");
 const { groupItemsByCompany } = require("../../utils/Order");
 const { getProductId } = require("../../utils/stringsNymber");
@@ -235,25 +234,17 @@ const captureTransaction = async (data, ipn_Payload) => {
     await payment.save({ session });
 
     const updatedItems = cart.items.filter((item) => {
-      // This will return true if the item should be removed
+      // Get the ObjectId of the current item
+      const itemId = getProductId(item);
+
+      // Check if the item should be removed by looking for a matching ObjectId
       const shouldRemove = successfullyCreatedItems.some((removeItem) => {
-        const { isMatchingProduct, isMatchingVariant } =
-          isMatchingProductOrVariant(
-            item,
-            removeItem?.product,
-            removeItem?.variantSKU
-          );
-
-        // If there's no variant SKU, check if the products match and if the item doesn't have a variant SKU
-        if (!removeItem?.variantSKU) {
-          return isMatchingProduct && !item.variantSKU;
-        }
-
-        // Otherwise, check if both product and variant match
-        return isMatchingProduct && isMatchingVariant;
+        const removeItemId = getProductId(removeItem);
+        // Compare ObjectIds directly
+        return itemId === removeItemId;
       });
 
-      // Return items that are NOT marked for removal
+      // Keep items that are NOT marked for removal
       return !shouldRemove;
     });
 

@@ -17,9 +17,12 @@ let {
   contactUsMailTemplate,
   customerOrderPlaceNotificationVendorTemplate,
   orderUpdateStatusForCustomTemplate,
+  orderCreateFailedEmailTemplate,
+  orderAdminOrderEmailTemplate,
 } = require("../templates/email");
 const { getNumber } = require("./stringsNymber");
-const Product = require("../models/Product");
+const Vendor = require("../models/Vendor");
+const Order = require("../models/Order");
 
 const setTransporter = () => {
   return nodemailer.createTransport({
@@ -91,56 +94,40 @@ const confirmOrder = async (user, cart, userEmail) => {
   try {
     const transporter = setTransporter();
     const data = cart.items.map((item) => {
-      // Prioritize variantDetails if available, otherwise fallback to product details
-      const productInfo = item?.variantDetails || item?.product;
-      // const productImageUrl =
-      //   productInfo?.images?.[0]?.url || "/image/default_image.webp";
-      // const imageAlt =
-      //   productInfo?.images?.[0]?.alt || productInfo?.name || "Product Image";
-      const productName = item?.product?.name;
-      const discount = getNumber(productInfo?.pricing?.discount);
-      const productPrice =
-        getNumber(productInfo?.pricing?.salePrice) - discount;
+      const quantity = item.quantity;
+      const price = item?.variantSnapshot
+        ? item?.variantSnapshot?.pricing?.salePrice
+        : item?.productSnapshot?.pricing?.salePrice;
+      const variant = item?.variantSnapshot
+        ? item?.variantSnapshot?.variantName
+        : null;
+      const totalPrice = quantity * price;
+      const productName = item?.productSnapshot?.name;
 
-      const color = item?.variantDetails
-        ? productInfo?.color
-        : item?.product?.attributes?.color;
-      const size = item?.variantDetails
-        ? productInfo?.size
-        : item?.product?.attributes?.size;
-      const table = {
+      const discount =
+        quantity *
+        (item?.variantSnapshot
+          ? item?.variantSnapshot?.pricing?.discount
+          : item.productSnapshot?.pricing?.discount);
+
+      return {
         item: productName,
-        quantity: item?.quantity,
-        price: "TK. " + productPrice,
-        size: size,
-        color: color,
+        quantity,
+        discount,
+        price: `TK. ${price}`,
+        variant,
+        totalPrice: `TK. ${totalPrice}`,
       };
-      return table;
     });
 
     const bill = cart.bill;
     const msg = {
       to: userEmail,
-      // from: process.env.SMTP_USER,
-      from: `"Strikeo" <${process.env.SMTP_USER}>`,
-      subject: "Order Confirmation",
-      html: orderConfirmTemplate(data, user, bill),
-    };
-    const bang = {
-      to: "shsohel.tc@gmail.com",
-      // from: process.env.SMTP_USER,
       from: `"Strikeo" <${process.env.SMTP_USER}>`,
       subject: "Order Confirmation",
       html: orderConfirmTemplate(data, user, bill),
     };
 
-    // transporter.sendMail(bang, (err, info) => {
-    //   if (err) {
-    //     console.log("While order confirm email sent=> ", err);
-    //   } else {
-    //     console.log("Email sent", info);
-    //   }
-    // });
     transporter.sendMail(msg, (err, info) => {
       if (err) {
         console.log("While order confirm email sent=> ", err);
@@ -165,15 +152,26 @@ const vendorUserOrderNotification = async (
     // Resolve all product details asynchronously using Promise.all
     const data = await Promise.all(
       items.map(async (item) => {
-        const productData = await Product.findById(item.product);
         const quantity = item.quantity;
-        const price = item.productSnapshot?.pricing?.costPrice;
+        const price = item?.variantSnapshot
+          ? item?.variantSnapshot?.pricing?.costPrice
+          : item?.productSnapshot?.pricing?.costPrice;
+        const variant = item?.variantSnapshot
+          ? item?.variantSnapshot?.variantName
+          : null;
         const totalPrice = quantity * price;
-        const productName = productData?.name;
+        const productName = item?.productSnapshot?.name;
 
+        const discount =
+          quantity *
+          (item?.variantSnapshot
+            ? item?.variantSnapshot?.pricing?.discount
+            : item.productSnapshot?.pricing?.discount);
         return {
           item: productName,
           quantity,
+          variant,
+          discount,
           price: `TK. ${price}`,
           totalPrice: `TK. ${totalPrice}`,
         };
@@ -208,19 +206,30 @@ const customerOrderStatusNotification = async (
   try {
     const transporter = setTransporter();
 
-    // Resolve all product details asynchronously using Promise.all
     const data = await Promise.all(
       items.map(async (item) => {
-        const productData = await Product.findById(item.product);
         const quantity = item.quantity;
-        const price = item.productSnapshot?.pricing?.salePrice;
+        const price = item?.variantSnapshot
+          ? item?.variantSnapshot?.pricing?.salePrice
+          : item?.productSnapshot?.pricing?.salePrice;
+        const variant = item?.variantSnapshot
+          ? item?.variantSnapshot?.variantName
+          : null;
         const totalPrice = quantity * price;
-        const productName = productData?.name;
+        const productName = item?.productSnapshot?.name;
+
+        const discount =
+          quantity *
+          (item?.variantSnapshot
+            ? item?.variantSnapshot?.pricing?.discount
+            : item.productSnapshot?.pricing?.discount);
 
         return {
           item: productName,
           quantity,
           price: `TK. ${price}`,
+          discount,
+          variant,
           totalPrice: `TK. ${totalPrice}`,
         };
       })
@@ -234,6 +243,17 @@ const customerOrderStatusNotification = async (
     };
 
     await transporter.sendMail(msg);
+
+    ///Email Notification for Strikeo
+    const msgForStrikeo = {
+      to: process.env.SMTP_USER,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
+      subject: `Order Status : Order No.- ${orderNo}`,
+      html: orderUpdateStatusForCustomTemplate(data, orderNo, bill, status),
+    };
+
+    await transporter.sendMail(msgForStrikeo);
+
     console.log("Email sent successfully");
   } catch (error) {
     console.error("Error sending order confirmation email:", error);
@@ -381,76 +401,50 @@ const handleOrderCreateFailedNotify = async (email, removedMessage = {}) => {
     return;
   }
 
-  const mailGenerator = new Mailgen({
-    theme: "default",
-    product: {
-      name: "Strikeo",
-      link: process.env.FRONTEND_URL,
-    },
-  });
-
   // Extract reason and items from the object
   const { failureReason = "N/A", items = [], message = "N/A" } = removedMessage;
 
-  // Create table rows for each item under this failure reason
-  const tableRows = items.map(
-    (item, i) =>
-      `<tr>
-        <td>${i + 1}</td>
-        <td>${item?.productSnapshot?.name || "N/A"} ${
-        item?.variantSnapshot
-          ? `<br/> Variant: ${items?.variantSnapshot?.variantName || "N/A"}`
-          : ""
-      }</td>
-        <td>${
-          item?.variantSnapshot
-            ? item?.variantSnapshot?.pricing?.salePrice
-            : item?.productSnapshot?.pricing?.salePrice
-        }</td>
-      </tr>`
+  const data = await Promise.all(
+    items.map(async (item) => {
+      const quantity = item.quantity;
+      const price = item?.variantSnapshot
+        ? item?.variantSnapshot?.pricing?.salePrice
+        : item?.productSnapshot?.pricing?.salePrice;
+      const variant = item?.variantSnapshot
+        ? item?.variantSnapshot?.variantName
+        : null;
+      const totalPrice = quantity * price;
+      const productName = item?.productSnapshot?.name;
+
+      const discount =
+        quantity *
+        (item?.variantSnapshot
+          ? item?.variantSnapshot?.pricing?.discount
+          : item.productSnapshot?.pricing?.discount);
+
+      return {
+        item: productName,
+        quantity,
+        discount,
+        price: `TK. ${price}`,
+        variant,
+        totalPrice: `TK. ${totalPrice}`,
+      };
+    })
   );
 
-  // Create a table to display item details
-  const itemTable = `
-    <table border="1" cellpadding="5" cellspacing="0" width="100%">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Item Name</th>
-          <th>Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${tableRows.join("")}
-      </tbody>
-    </table>
-  `;
-
-  // Prepare the email body
-  const emailBody = {
-    body: {
-      title: "Hi! Thank you for your recent order with us. Here's an update:",
-      intro: `<strong>${message}</strong><br/><br/>${itemTable}`,
-      outro: `<strong>Reason:</strong> <span> ${failureReason}</span>`,
-      action: {
-        instructions: `If you have any questions, feel free to reach out!`,
-        button: {
-          color: "#3869D4",
-          text: "Contact Us",
-          link: `mailto:${process.env.SMTP_USER}`,
-        },
-      },
-    },
+  const dt = {
+    title: "Hi! Thank you for your recent order with us. Here's an update:",
+    subTitle: `<strong>${message}</strong>`,
+    reason: `<strong>Reason:</strong> <span> ${failureReason}</span>`,
+    orders: data,
   };
-
-  // Generate email content using Mailgen
-  const emailContent = mailGenerator.generate(emailBody);
 
   const emailOptions = {
     to: email,
     from: `"Strikeo" <${process.env.SMTP_USER}>`,
     subject: "Update on Your Order",
-    html: emailContent,
+    html: orderCreateFailedEmailTemplate(dt),
   };
 
   const transporter = setTransporter();
@@ -460,6 +454,149 @@ const handleOrderCreateFailedNotify = async (email, removedMessage = {}) => {
     console.log("Order update notification email sent successfully!");
   } catch (err) {
     console.error("Failed to send order update email:", err.message);
+  }
+};
+const orderAdminNotification = async (info) => {
+  try {
+    const { orderNumber, items } = info;
+    const transporter = setTransporter();
+
+    const userOrderData = await Promise.all(
+      items.map(async (item) => {
+        const quantity = item.quantity;
+        const price = item?.variantSnapshot
+          ? item?.variantSnapshot?.pricing?.salePrice
+          : item?.productSnapshot?.pricing?.salePrice;
+        const variant = item?.variantSnapshot
+          ? item?.variantSnapshot?.variantName
+          : null;
+        const totalPrice = quantity * price;
+        const productName = item?.productSnapshot?.name;
+
+        const discount =
+          quantity *
+          (item?.variantSnapshot
+            ? item?.variantSnapshot?.pricing?.discount
+            : item.productSnapshot?.pricing?.discount);
+
+        return {
+          item: productName,
+          quantity,
+          price: `TK. ${price}`,
+          discount,
+          variant,
+          totalPrice: `TK. ${totalPrice}`,
+        };
+      })
+    );
+    const vendorOrderData = await Promise.all(
+      items.map(async (item) => {
+        const quantity = item.quantity;
+        const price = item?.variantSnapshot
+          ? item?.variantSnapshot?.pricing?.costPrice
+          : item?.productSnapshot?.pricing?.costPrice;
+        const variant = item?.variantSnapshot
+          ? item?.variantSnapshot?.variantName
+          : null;
+        const totalPrice = quantity * price;
+        const productName = item?.productSnapshot?.name;
+
+        const discount =
+          quantity *
+          (item?.variantSnapshot
+            ? item?.variantSnapshot?.pricing?.discount
+            : item.productSnapshot?.pricing?.discount);
+
+        return {
+          item: productName,
+          quantity,
+          price: `TK. ${price}`,
+          discount,
+          variant,
+          totalPrice: `TK. ${totalPrice}`,
+        };
+      })
+    );
+
+    ///Email Notification for Strikeo
+    const msgForStrikeo = {
+      to: process.env.SMTP_USER,
+      from: `"Strikeo" <${process.env.SMTP_USER}>`,
+      subject: `Order Status : Order No.- ${orderNumber}`,
+      html: orderAdminOrderEmailTemplate(info, userOrderData, vendorOrderData),
+    };
+
+    await transporter.sendMail(msgForStrikeo);
+
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Error sending order confirmation email:", error);
+  }
+};
+
+const handleEmailAfterPaymentAndOrderDone = async (data) => {
+  try {
+    const { orders, customer } = data;
+    const {
+      email: customerEmail,
+      firstName: customerFirstName,
+      lastName: customerLastName,
+    } = customer;
+    await Promise.all(
+      orders.map(async (o) => {
+        const order = await Order.findById(o._id);
+        const {
+          items,
+          company,
+          vendorBill,
+          customerBill,
+          shippingDetails,
+          orderNumber,
+        } = order;
+        const { firstName, lastName, contact } = await Vendor.findOne({
+          company: company,
+        });
+        const { email } = contact;
+        const status = "Confirmed";
+
+        ///Send Email to vendor
+        await vendorUserOrderNotification(
+          orderNumber,
+          items,
+          email,
+          vendorBill,
+          shippingDetails
+        );
+
+        ///Send Email to customer
+        await customerOrderStatusNotification(
+          orderNumber,
+          items,
+          customerEmail,
+          customerBill,
+          status
+        );
+        ///Strikeo Admin Email Notification
+
+        const orderInfo = {
+          customerName: `${customerFirstName} ${customerLastName}`,
+          customerEmail,
+          customerBill,
+          shippingDetails,
+          //Vendor Info
+          vendorName: `${firstName} ${lastName}`,
+          vendorEmail: email,
+          orderNumber,
+          vendorBill,
+          items,
+          status,
+        };
+
+        await orderAdminNotification(orderInfo);
+      })
+    );
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -472,4 +609,6 @@ module.exports = {
   handleOrderCreateFailedNotify,
   vendorUserOrderNotification,
   customerOrderStatusNotification,
+  handleEmailAfterPaymentAndOrderDone,
+  orderAdminNotification,
 };

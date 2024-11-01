@@ -11,17 +11,16 @@ const { default: mongoose } = require("mongoose");
 const Agent = require("../models/Agent.js");
 const { createMessageBody } = require("../utils/message.js");
 
-const { getNumber, getProductId } = require("../utils/stringsNymber.js");
+const { getProductId } = require("../utils/stringsNymber.js");
 const { createSingleOrder, groupItemsByCompany } = require("../utils/Order.js");
-const {
-  cartFormatForSelectedItems,
-  isMatchingProductOrVariant,
-} = require("../utils/Cart.js");
+const { cartFormatForSelectedItems } = require("../utils/Cart.js");
 const {
   handleOrderCreateFailedNotify,
   vendorUserOrderNotification,
   customerOrderStatusNotification,
+  orderAdminNotification,
 } = require("../utils/mailer.js");
+const Vendor = require("../models/Vendor.js");
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioClient = require("twilio")(accountSid, authToken);
@@ -411,25 +410,17 @@ const createOrder = async (req, res, next) => {
     // After processing all orders, update cart with successfully created orders
     if (successfullyCreatedItems.length > 0) {
       const updatedItems = cart.items.filter((item) => {
-        // This will return true if the item should be removed
+        // Get the ObjectId of the current item
+        const itemId = getProductId(item);
+
+        // Check if the item should be removed by looking for a matching ObjectId
         const shouldRemove = successfullyCreatedItems.some((removeItem) => {
-          const { isMatchingProduct, isMatchingVariant } =
-            isMatchingProductOrVariant(
-              item,
-              removeItem?.product,
-              removeItem?.variantSKU
-            );
-
-          // If there's no variant SKU, check if the products match and if the item doesn't have a variant SKU
-          if (!removeItem?.variantSKU) {
-            return isMatchingProduct && !item.variantSKU;
-          }
-
-          // Otherwise, check if both product and variant match
-          return isMatchingProduct && isMatchingVariant;
+          const removeItemId = getProductId(removeItem);
+          // Compare ObjectIds directly
+          return itemId === removeItemId;
         });
 
-        // Return items that are NOT marked for removal
+        // Keep items that are NOT marked for removal
         return !shouldRemove;
       });
 
@@ -468,8 +459,18 @@ const confirmUserOrder = async (req, res, next) => {
   try {
     const user = await User.findById(id);
     const order = await Order.findOne({ _id: orderId, customer: id });
-    const company = await Company.findOne({ _id: order.company });
-    const { contact } = company;
+    ///Vendor Data
+    const { firstName, lastName, contact } = await Vendor.findOne({
+      company: order.company,
+    });
+    const { email } = contact;
+
+    //Customer Data
+    const {
+      firstName: customerFirstName,
+      lastName: customerLastName,
+      email: customerEmail,
+    } = user;
 
     if (!user || !order) {
       console.log("Check failed: User or order not found.");
@@ -502,14 +503,34 @@ const confirmUserOrder = async (req, res, next) => {
     await order.save({ validateModifiedOnly: true });
     await user.save();
 
+    const { orderNumber, items, vendorBill, shippingDetails, customerBill } =
+      order;
+
     ///Email send to vendor after customer is confirmed the order
     await vendorUserOrderNotification(
-      order.orderNumber,
-      order.items,
-      contact?.email,
-      order.vendorBill,
-      order.shippingDetails
+      orderNumber,
+      items,
+      email,
+      vendorBill,
+      shippingDetails
     );
+
+    ///Send the order notification to Strikeo Admin Email Address
+    //After user's confirmation
+    const orderInfo = {
+      customerName: `${customerFirstName} ${customerLastName}`,
+      customerEmail,
+      customerBill,
+      shippingDetails: shippingDetails,
+      //Vendor Info
+      vendorName: `${firstName} ${lastName}`,
+      vendorEmail: email,
+      orderNumber,
+      vendorBill,
+      items,
+      status: "Confirmed", //Only for message sending conditionally, never effect on any data
+    };
+    await orderAdminNotification(orderInfo);
 
     return res.redirect(
       `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${order?.orderNumber}&bill=${order?.customerBill}`
@@ -639,15 +660,56 @@ const updateOrder = async (req, res, next) => {
 
     ///Order Status Changing: Customer Email Notification
     // orderUpdateStatusForCustomTemplate
-    const { orderNumber, items, customer, customerBill } = updatedOrder;
+    const {
+      orderNumber,
+      items,
+      customer,
+      customerBill,
+      vendorBill,
+      shippingDetails,
+      company,
+    } = updatedOrder;
     const orderUser = await User.findById(customer);
+    ///Vendor Data
+    const { firstName, lastName, contact } = await Vendor.findOne({
+      company: company.id,
+    });
+
+    const { email } = contact; ///Vendor Email
+
+    const {
+      firstName: customerFirstName,
+      lastName: customerLastName,
+      email: customerEmail,
+    } = orderUser;
+
+    //Notify user when order status changes
     await customerOrderStatusNotification(
       orderNumber,
       items,
-      orderUser?.email,
+      customerEmail,
       customerBill,
       status
     );
+
+    ///Send the order notification to Strikeo Admin Email Address
+    //If vendor changed order status
+    if (roleType === "Vendor") {
+      const orderInfo = {
+        customerName: `${customerFirstName} ${customerLastName}`,
+        customerEmail,
+        customerBill,
+        shippingDetails,
+        //Vendor Info
+        vendorName: `${firstName} ${lastName}`,
+        vendorEmail: email,
+        orderNumber,
+        vendorBill,
+        items,
+        status,
+      };
+      await orderAdminNotification(orderInfo);
+    }
 
     return next(new OkResponse(updatedOrder, "Order updated successfully!"));
   } catch (error) {
