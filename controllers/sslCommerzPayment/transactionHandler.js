@@ -199,7 +199,11 @@ const captureTransaction = async (data, ipn_Payload) => {
         orderData.items
       );
       activeBillingAddress.shippingCost = shippingCost;
-
+      console.log(
+        "-------------------------",
+        activeBillingAddress.shippingCost,
+        shippingCost
+      );
       // Save order and track successes/failures
       const order = new Order({
         customer: getProductId(user),
