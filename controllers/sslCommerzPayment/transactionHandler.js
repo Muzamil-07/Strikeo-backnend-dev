@@ -8,10 +8,8 @@ const {
   handleOrderCreateFailedNotify,
 } = require("../../utils/mailer");
 const { tranStatusFormat } = require("./initDataProcess");
-const {
-  cartFormatForSelectedItems,
-} = require("../../utils/Cart");
-const { groupItemsByCompany } = require("../../utils/Order");
+const { cartFormatForSelectedItems } = require("../../utils/Cart");
+const { groupItemsByCompany, getShippingCost } = require("../../utils/Order");
 const { getProductId } = require("../../utils/stringsNymber");
 
 const handlePaymentFail = async (data, ipn_Payload) => {
@@ -148,9 +146,7 @@ const captureTransaction = async (data, ipn_Payload) => {
     throw Error("Selected items not found in your cart");
   }
   if (selectedPayableAmount <= 0) {
-    throw Error(
-      "The payable amount for selected items must be greater than zero."
-    );
+    throw Error("The payable amount for selected items cannot be zero '0'");
   }
 
   // saving sslcz payload others info
@@ -193,10 +189,17 @@ const captureTransaction = async (data, ipn_Payload) => {
   const failedOrders = [];
   let successfullyCreatedItems = [];
   let successfullyCreatedAmount = 0;
+  let successfullyCreatedshippingCost = 0;
 
   // Process grouped orders
   for (const orderData of orders) {
     try {
+      const shippingCost = await getShippingCost(
+        JSON.parse(JSON.stringify(activeBillingAddress)),
+        orderData.items
+      );
+      activeBillingAddress.shippingCost = shippingCost;
+
       // Save order and track successes/failures
       const order = new Order({
         customer: getProductId(user),
@@ -213,6 +216,7 @@ const captureTransaction = async (data, ipn_Payload) => {
       completedOrders.push(order._id);
       successfullyCreatedItems.push(...orderData.items); // Track successfully created items
       successfullyCreatedAmount += orderData.totalAmount; // Accumulate successful order amounts
+      successfullyCreatedshippingCost += orderData.shippingCost; // Accumulate successful shipping amounts
     } catch (error) {
       orderData.message =
         "Unfortunately, we are unable to place your order for the following items.";
@@ -234,14 +238,11 @@ const captureTransaction = async (data, ipn_Payload) => {
     await payment.save({ session });
 
     const updatedItems = cart.items.filter((item) => {
-      // Get the ObjectId of the current item
       const itemId = getProductId(item);
 
       // Check if the item should be removed by looking for a matching ObjectId
       const shouldRemove = successfullyCreatedItems.some((removeItem) => {
-        const removeItemId = getProductId(removeItem);
-        // Compare ObjectIds directly
-        return itemId === removeItemId;
+        return itemId === getProductId(removeItem);
       });
 
       // Keep items that are NOT marked for removal

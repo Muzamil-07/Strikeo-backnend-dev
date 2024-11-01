@@ -38,9 +38,13 @@ function validateAddress(address) {
     return "City is required.";
   }
 
-  // if (!address.state) {
-  //   return "State is required.";
-  // }
+  if (!address.zone) {
+    return "Zone is required.";
+  }
+
+  if (!address.area) {
+    return "Are is required.";
+  }
 
   if (!address.country) {
     return "Country is required.";

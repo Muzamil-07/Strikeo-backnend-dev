@@ -1,146 +1,3 @@
-const emailTemplateLogo = `<table cellpadding="0" cellspacing="0" width="100%">
-                <tr>
-                  <td align="left" style="width: 100%; padding: 20px 0 5px">
-                    <img
-                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
-                      alt="Light Logo"
-                      class="logo"
-                      width="200"
-                      height="auto"
-                      style="width: 106px; height: auto; object-fit: cover"
-                    />
-                  </td>
-                </tr>
-      </table>
-  `;
-const emailTemplateFooter = `<table width="100%" cellpadding="20" cellspacing="0">
-                        <tr>
-                          <td
-                            align="center"
-                            style="background-color: #eeeeee; padding: 10px"
-                          >
-                            <p
-                              class="footer-find-us"
-                              style="
-                                font-size: 0.875rem;
-                                margin: 0;
-                                font-weight: bold;
-                                padding: 0.5rem;
-                              "
-                            >
-                              Find us on
-                            </p>
-                            <!-- Social Media Icons -->
-                            <table
-                              align="center"
-                              cellpadding="0"
-                              cellspacing="0"
-                              border="0"
-                              style="margin-top: 10px"
-                            >
-                              <tr>
-                                <td style="padding: 0 5px">
-                                  <a
-                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
-                                    target="_blank"
-                                    style="
-                                      color: #111111;
-                                      text-decoration: none;
-                                    "
-                                  >
-                                    <img
-                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
-                                      alt="facebook Icon"
-                                      class="social-icon"
-                                      width="40"
-                                      height="40"
-                                      style="
-                                        width: 30px;
-                                        height: 30px;
-                                        margin: 0 5px;
-                                      "
-                                    />
-                                  </a>
-                                </td>
-                                <td style="padding: 0 5px">
-                                  <a
-                                    href="https://x.com/ShopStrikeO"
-                                    target="_blank"
-                                    style="
-                                      color: #111111;
-                                      text-decoration: none;
-                                    "
-                                  >
-                                    <img
-                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
-                                      alt="twitter icon"
-                                      class="social-icon"
-                                      width="40"
-                                      height="40"
-                                      style="
-                                        width: 30px;
-                                        height: 30px;
-                                        margin: 0 5px;
-                                      "
-                                    />
-                                  </a>
-                                </td>
-                                <td style="padding: 0 5px">
-                                  <a
-                                    href="https://www.linkedin.com/company/strikeo"
-                                    target="_blank"
-                                    style="
-                                      color: #111111;
-                                      text-decoration: none;
-                                    "
-                                  >
-                                    <img
-                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
-                                      alt="linkedIn icon"
-                                      class="social-icon"
-                                      width="40"
-                                      height="40"
-                                      style="
-                                        width: 30px;
-                                        height: 30px;
-                                        margin: 0 5px;
-                                      "
-                                    />
-                                  </a>
-                                </td>
-                              </tr>
-                            </table>
-                            <p
-                              class="footer-text"
-                              style="
-                                padding: 0.5rem;
-                                text-align: center;
-                                color: #888;
-                                font-size: 12px;
-                                margin-top: 20px;
-                              "
-                            >
-                              <a
-                                style="color: #111111; text-decoration: none"
-                                href="https://www.strikeo.com/legal/privacy-policy"
-                                target="_blank"
-                                >Privacy Policy</a
-                              >
-                              |
-                              <a
-                                style="color: #111111; text-decoration: none"
-                                href="https://www.strikeo.com/legal/terms-conditions"
-                                target="_blank"
-                                >Terms & Conditions</a
-                              >
-                              <br /><br />
-                              This is an automatically generated e-mail. Please
-                              do not reply.
-                            </p>
-                          </td>
-                        </tr>
-                     </table>
-  `;
 const emailOTPTemplate = (user, subject) => {
   return `<!DOCTYPE html>
     <html
@@ -272,7 +129,17 @@ const emailOTPTemplate = (user, subject) => {
             <table cellspacing="0" cellpadding="0" border="0" width="100%">
               <tr>
                 <td align="left" style="background-color: #f4f4f4">
-                 ${emailTemplateLogo}
+                  <table cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td align="left" style="width: 100%; padding: 10px 0px">
+                        <img
+                          src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                          alt="Light Logo"
+                          class="logo"
+                        />
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               <tr style="background-color: #fff">
@@ -356,7 +223,90 @@ const emailOTPTemplate = (user, subject) => {
                     <tr>
                       <td>
                         <div style="padding: 20px">
-                            ${emailTemplateFooter}
+                          <table width="100%" cellpadding="20" cellspacing="0">
+                            <tr>
+                              <td
+                                align="center"
+                                style="background-color: #eeeeee; padding: 10px"
+                              >
+                                <p
+                                  class="footer-find-us"
+                                  style="
+                                    font-size: 0.875rem;
+                                    margin: 0;
+                                    font-weight: bold;
+                                  "
+                                >
+                                  Find us on
+                                </p>
+                                <!-- Social Media Icons -->
+                                <table
+                                  align="center"
+                                  cellpadding="0"
+                                  cellspacing="0"
+                                  border="0"
+                                  style="margin-top: 10px"
+                                >
+                                  <tr>
+                                    <td style="padding: 0 5px">
+                                      <a
+                                        href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                        target="_blank"
+                                      >
+                                        <img
+                                          src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                          alt="Facebook"
+                                          class="social-icon"
+                                        />
+                                      </a>
+                                    </td>
+                                    <td style="padding: 0 5px">
+                                      <a
+                                        href="https://x.com/ShopStrikeO"
+                                        target="_blank"
+                                      >
+                                        <img
+                                          src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                          alt="Twitter"
+                                          class="social-icon"
+                                        />
+                                      </a>
+                                    </td>
+                                    <td style="padding: 0 5px">
+                                      <a
+                                        href="https://www.linkedin.com/company/strikeo"
+                                        target="_blank"
+                                      >
+                                        <img
+                                          src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                          alt="LinkedIn"
+                                          class="social-icon"
+                                        />
+                                      </a>
+                                    </td>
+                                  </tr>
+                                </table>
+                                <p class="footer-text">
+                                  <a
+                                    style="color: #111111"
+                                    href="https://www.strikeo.com/legal/privacy-policy"
+                                    target="_blank"
+                                    >Privacy Policy</a
+                                  >
+                                  |
+                                  <a
+                                    style="color: #111111"
+                                    href="https://www.strikeo.com/legal/terms-conditions"
+                                    target="_blank"
+                                    >Terms & Conditions</a
+                                  >
+                                  <br /><br />
+                                  This is an automatically generated e-mail. Please
+                                  do not reply.
+                                </p>
+                              </td>
+                            </tr>
+                          </table>
                         </div>
                       </td>
                     </tr>
@@ -434,7 +384,18 @@ const emailVerifyTemplate = (user) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -512,7 +473,127 @@ const emailVerifyTemplate = (user) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                        ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -591,7 +672,18 @@ const loginCredentialsTemplate = (user) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -689,7 +781,127 @@ const loginCredentialsTemplate = (user) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                       ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -768,7 +980,18 @@ const forgotPasswordTemplate = (user) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -838,7 +1061,127 @@ const forgotPasswordTemplate = (user) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                       ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -917,7 +1260,18 @@ const profileUpdateTemplate = (user, newPass) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -1033,7 +1387,127 @@ const profileUpdateTemplate = (user, newPass) => {
           <tr>
             <td>
               <div style="padding: 20px">
-                  ${emailTemplateFooter}
+                <table width="100%" cellpadding="20" cellspacing="0">
+                  <tr>
+                    <td
+                      align="center"
+                      style="background-color: #eeeeee; padding: 10px"
+                    >
+                      <p
+                        class="footer-find-us"
+                        style="
+                          font-size: 0.875rem;
+                          margin: 0;
+                          font-weight: bold;
+                          padding: 0.5rem;
+                        "
+                      >
+                        Find us on
+                      </p>
+                      <!-- Social Media Icons -->
+                      <table
+                        align="center"
+                        cellpadding="0"
+                        cellspacing="0"
+                        border="0"
+                        style="margin-top: 10px"
+                      >
+                        <tr>
+                          <td style="padding: 0 5px">
+                            <a
+                              href="https://www.facebook.com/p/StrikeO-61553772012607"
+                              target="_blank"
+                              style="
+                                color: #111111;
+                                text-decoration: none;
+                              "
+                            >
+                              <img
+                                src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                alt="Facebook"
+                                class="social-icon"
+                                style="
+                                  width: 30px;
+                                  height: 30px;
+                                  margin: 0 5px;
+                                "
+                              />
+                            </a>
+                          </td>
+                          <td style="padding: 0 5px">
+                            <a
+                              href="https://x.com/ShopStrikeO"
+                              target="_blank"
+                              style="
+                                color: #111111;
+                                text-decoration: none;
+                              "
+                            >
+                              <img
+                                src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                alt="Twitter"
+                                class="social-icon"
+                                style="
+                                  width: 30px;
+                                  height: 30px;
+                                  margin: 0 5px;
+                                "
+                              />
+                            </a>
+                          </td>
+                          <td style="padding: 0 5px">
+                            <a
+                              href="https://www.linkedin.com/company/strikeo"
+                              target="_blank"
+                              style="
+                                color: #111111;
+                                text-decoration: none;
+                              "
+                            >
+                              <img
+                                src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                alt="LinkedIn"
+                                class="social-icon"
+                                style="
+                                  width: 30px;
+                                  height: 30px;
+                                  margin: 0 5px;
+                                "
+                              />
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      <p
+                        class="footer-text"
+                        style="
+                          padding: 0.5rem;
+                          text-align: center;
+                          color: #888;
+                          font-size: 12px;
+                          margin-top: 20px;
+                        "
+                      >
+                        <a
+                          style="color: #111111; text-decoration: none"
+                          href="https://www.strikeo.com/legal/privacy-policy"
+                          target="_blank"
+                          >Privacy Policy</a
+                        >
+                        |
+                        <a
+                          style="color: #111111; text-decoration: none"
+                          href="https://www.strikeo.com/legal/terms-conditions"
+                          target="_blank"
+                          >Terms & Conditions</a
+                        >
+                        <br /><br />
+                        This is an automatically generated e-mail. Please
+                        do not reply.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
               </div>
             </td>
           </tr>
@@ -1109,7 +1583,18 @@ const createPasswordTemplate = (user) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-             ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -1164,7 +1649,127 @@ const createPasswordTemplate = (user) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                        ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -1242,7 +1847,18 @@ const updatePasswordTemplate = (user) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -1326,7 +1942,127 @@ const updatePasswordTemplate = (user) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                        ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -1405,7 +2141,18 @@ const emailChangeTemplate = (user) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -1461,7 +2208,127 @@ const emailChangeTemplate = (user) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                        ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -1476,10 +2343,6 @@ const emailChangeTemplate = (user) => {
 `;
 };
 const orderConfirmTemplate = (data, user, bill) => {
-  const totalDiscount = data.reduce(
-    (sum, item) => sum + (item.discount || 0),
-    0
-  );
   return `<!DOCTYPE html>
 <html
   lang="en"
@@ -1541,7 +2404,18 @@ const orderConfirmTemplate = (data, user, bill) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-             ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -1613,15 +2487,6 @@ const orderConfirmTemplate = (data, user, bill) => {
                             >
                               Price
                             </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                            Total  Price
-                            </th>
                            
                           </tr>
                         </thead>
@@ -1630,11 +2495,7 @@ const orderConfirmTemplate = (data, user, bill) => {
                             .map(
                               (row) => `
                             <tr>
-                              <td style="padding: 10px 0">
-                              ${row.item}<br/>
-                              ${row?.variant ? `Variant: ${row?.variant}` : ""}
-                              
-                              </td>
+                              <td style="padding: 10px 0">${row.item}</td>
                               <td
                                 style="
                                   padding: 10px;
@@ -1651,42 +2512,22 @@ const orderConfirmTemplate = (data, user, bill) => {
                               >
                                 ${row.price}
                               </td>
-                              <td
-                                style="
-                                  padding: 10px;
-                                  text-align: right;
-                                "
-                              >
-                                ${row.totalPrice}
-                              </td>
                              
                             </tr>
                           `
                             )
                             .join("")}
-                           <tr>
-                              <td colspan="3" style="padding: 10px; text-align: right; ">Discount(-)</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${totalDiscount}</td>
-                            </tr>
-                            <tr>
-                              <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${bill}</td>
-                            </tr>
                         </tbody>
                       </table>
                       <!-- End order details table -->
 
-                      <p  
-                      style="
+                      <p  style="
                           font-weight: 600;
                           font-size: 12px;
                           color: #313d5b;
                           margin: 20px auto;
                           text-align: justify;
-                        "
-                        >
-                        Please confirm your order by clicking on the button below:
-                      </p>
+                        ">Please confirm your order by clicking on the button below:</p>
                       <div style="text-align: center; margin-top: 40px">
                         <a
                           href="${user.confirm_token.link}"
@@ -1708,7 +2549,127 @@ const orderConfirmTemplate = (data, user, bill) => {
                   <tr>
                   <td>
                     <div style="padding: 20px">
-                        ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -1727,10 +2688,6 @@ const customerOrderPlaceNotificationVendorTemplate = (
   shippingDetails,
   orderNo
 ) => {
-  // const totalDiscount = data.reduce(
-  //   (sum, item) => sum + (item.discount || 0),
-  //   0
-  // );
   return `<!DOCTYPE html>
 <html
   lang="en"
@@ -1792,7 +2749,18 @@ const customerOrderPlaceNotificationVendorTemplate = (
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-             ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -1863,7 +2831,6 @@ const customerOrderPlaceNotificationVendorTemplate = (
                             >
                               Price
                             </th>
-                             
                           </tr>
                         </thead>
                         <tbody>
@@ -1871,10 +2838,7 @@ const customerOrderPlaceNotificationVendorTemplate = (
                             .map(
                               (row) => `
                           <tr>
-                            <td style="padding: 10px 0">
-                             ${row.item}<br/>
-                              ${row.variant ? `variant : ${row.variant}` : ""}
-                            </td>
+                            <td style="padding: 10px 0">${row.item}</td>
                             <td style="padding: 10px; text-align: center">
                               ${row.quantity}
                             </td>
@@ -1888,8 +2852,6 @@ const customerOrderPlaceNotificationVendorTemplate = (
                           `
                             )
                             .join("")}
-
-                        
                           <tr>
                             <td
                               colspan="3"
@@ -2012,7 +2974,127 @@ const customerOrderPlaceNotificationVendorTemplate = (
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                       ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -2092,7 +3174,18 @@ const sslCommerzeOrderTemplate = (data) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -2158,7 +3251,127 @@ const sslCommerzeOrderTemplate = (data) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                        ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -2238,7 +3451,18 @@ const contactUsMailTemplate = (data) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -2343,7 +3567,127 @@ const contactUsMailTemplate = (data) => {
                 <tr>
                   <td>
                     <div style="padding: 20px">
-                       ${emailTemplateFooter}
+                      <table width="100%" cellpadding="20" cellspacing="0">
+                        <tr>
+                          <td
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
+                          >
+                            <p
+                              class="footer-find-us"
+                              style="
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
+                              "
+                            >
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
+                              style="
+                                padding: 0.5rem;
+                                text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
+                              "
+                            >
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </div>
                   </td>
                 </tr>
@@ -2359,10 +3703,7 @@ const contactUsMailTemplate = (data) => {
 };
 
 const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
-  const totalDiscount = data.reduce(
-    (sum, item) => sum + (item.discount || 0),
-    0
-  );
+
   const orderStatusMessage = (status) => {
     switch (status) {
       case "Pending":
@@ -2375,8 +3716,6 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
         return "Your order has been delivered! We hope you enjoy it.";
       case "Cancelled":
         return "Your order has been cancelled. If you have any questions, please contact us.";
-      case "Confirmed":
-        return "Your order has been placed. We'll notify you once it starts processing.";
       default:
         return "Status unknown. Please contact support.";
     }
@@ -2442,7 +3781,18 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
         <table cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td align="left">
-              ${emailTemplateLogo}
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="left" style="width: 100%; padding: 20px 0 5px">
+                    <img
+                      src="https://portal.strikeo.com/uploads/1729610341542-strikeo_logo.png"
+                      alt="Light Logo"
+                      class="logo"
+                      style="width: 106px; height: auto; object-fit: cover"
+                    />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr style="background-color: #fff">
@@ -2455,18 +3805,6 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
                         style="
                           font-style: normal;
                           font-weight: 500;
-                          font-size: 24px;
-                          color: #313d5b;
-                          text-align: left;
-                          letter-spacing: 0.02em;
-                        "
-                      >
-                      Order No. :  ${orderNo}
-                      </h1>
-                      <h2
-                        style="
-                          font-style: normal;
-                          font-weight: 500;
                           font-size: 16px;
                           color: #313d5b;
                           text-align: left;
@@ -2474,7 +3812,7 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
                         "
                       >
                        ${orderStatusMessage(status)}
-                      </h2>
+                      </h1>
 
                       <!-- Begin order details table -->
                       <table
@@ -2512,15 +3850,6 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
                             >
                               Price
                             </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                              Total Price
-                            </th>
                            
                           </tr>
                         </thead>
@@ -2529,11 +3858,7 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
                             .map(
                               (row) => `
                             <tr>
-                              <td style="padding: 10px 0">
-                              ${row.item}
-                               <br/>
-                              ${row?.variant ? `Variant: ${row?.variant}` : ""}
-                              </td>
+                              <td style="padding: 10px 0">${row.item}</td>
                               <td
                                 style="
                                   padding: 10px;
@@ -2550,27 +3875,16 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
                               >
                                 ${row.price}
                               </td>
-                              <td
-                                style="
-                                  padding: 10px;
-                                  text-align: right;
-                                "
-                              >
-                                ${row.totalPrice}
-                              </td>
-                            
                              
                             </tr>
                           `
                             )
                             .join("")}
                             <tr>
-                              <td colspan="3" style="padding: 10px; text-align: right; ">Discount(-)</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${totalDiscount}</td>
-                            </tr>
-                            <tr>
-                              <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${bill}</td>
+                              <td colspan="2" style="padding: 10px 0; text-align: right; ">Total</td>
+                              <td style="padding: 10px 0; text-align: right; ">
+                                ${bill}
+                              </td>
                             </tr>
                         </tbody>
                       </table>
@@ -2582,686 +3896,128 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
                   <tr>
                   <td>
                     <div style="padding: 20px">
-                    ${emailTemplateFooter}
-                    </div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </div>
-  </body>
-</html>`;
-};
-
-const orderCreateFailedEmailTemplate = (data) => {
-  const { title, subTitle, reason, orders } = data;
-
-  return `<!DOCTYPE html>
-<html
-  lang="en"
-  dir="ltr"
-  xmlns:v="urn:schemas-microsoft-com:vml"
-  xmlns:o="urn:schemas-microsoft-com:office:office"
->
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=yes"
-    />
-    <meta
-      name="format-detection"
-      content="telephone=no, date=no, address=no, email=no, url=no"
-    />
-    <meta name="x-apple-disable-message-reformatting" />
-    <!-- Set color scheme to light only -->
-    <!-- <meta name="color-scheme" content="light" />
-    <meta name="supported-color-schemes" content="light" /> -->
-    <!--[if mso]>
-      <noscript>
-        <xml>
-          <o:OfficeDocumentSettings>
-            <o:PixelsPerInch>96</o:PixelsPerInch>
-          </o:OfficeDocumentSettings>
-        </xml>
-      </noscript>
-    <![endif]-->
-    <style>
-      @import url(https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap);
-
-      :root {
-        /* color-scheme: light;
-        supported-color-schemes: light; */
-        font-family: Outfit, Arial, sans-serif;
-        background-color: #eeeeee;
-      }
-    </style>
-  </head>
-
-  <body
-    class="body"
-    style="background-color: #f4f4f4; padding: 0.6rem; margin: 0"
-  >
-    <div
-      role="article"
-      aria-roledescription="email"
-      aria-label="email name"
-      lang="en"
-      dir="ltr"
-      style="font-size: medium; font-size: max(16px, 1rem)"
-    >
-      <!-- Start of the email content -->
-      <div
-        class="table-wrapper"
-        style="max-width: 500px; margin: 16px auto; padding: 20px"
-      >
-        <table cellspacing="0" cellpadding="0" border="0" width="100%">
-          <tr>
-            <td align="left">
-             ${emailTemplateLogo}
-            </td>
-          </tr>
-          <tr style="background-color: #fff">
-            <td>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="width: 100%">
-                    <div style="border-radius: 24px; padding: 30px">
-                      <h1
-                        style="
-                          font-style: normal;
-                          font-weight: 500;
-                          font-size: 20px;
-                          color: #313d5b;
-                          text-align: left;
-                          letter-spacing: 0.02em;
-                        "
-                      >
-                       ${title}
-                      </h1>
-
-                      <p
-                        style="
-                          font-weight: 400;
-                          font-size: 16px;
-                          color: #313d5b;
-                          margin: 20px auto;
-                          text-align: justify;
-                        "
-                      >
-                      ${subTitle}
-                      </p>
-
-                   
-                      <div>
-                      <table
-                     
-                        cellpadding="0"
-                        cellspacing="0"
-                        width="100%"
-                        style="margin: 20px 0; border-collapse: collapse; font-size: 12px;"
-                      >
-                        <thead>
-                          <tr>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: left;
-                              "
-                            >
-                              Item
-                            </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: center;
-                              "
-                            >
-                              Quantity
-                            </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                              Price
-                            </th>
-                             <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                            Total  Price
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          ${orders
-                            .map(
-                              (row) => `
-                            <tr>
-                              <td style="padding: 10px 0">
-                              ${row.item}
-                              <br/>
-                              ${row?.variant ? `Variant: ${row?.variant}` : ""}
-                              </td>
-                              <td
-                                style="
-                                  padding: 10px;
-                                  text-align: center;
-                                "
-                              >
-                                ${row.quantity}
-                              </td>
-                              <td
-                                style="
-                                  padding: 10px;
-                                  text-align: right;
-                                "
-                              >
-                                ${row.price}
-                              </td>
-                               <td
-                                style="
-                                  padding: 10px;
-                                  text-align: right;
-                                "
-                              >
-                                ${row.totalPrice}
-                              </td>
-                             
-                            </tr>
-                          `
-                            )
-                            .join("")}
-                           
-                        </tbody>
-                      </table>
-                      </div>
-
-                      <p>If you have any questions, feel free to reach out!</p>
-                      <div style="text-align: center; margin-top: 40px;  margin-bottom: 40px;">
-                        <a
-                          href="mailto:support@strikeo.com"
-                          style="
-                            background-color: #1a4c5f;
-                            border-radius: 16px;
-                            text-decoration: none;
-                            padding: 14px 30px;
-                            color: #fff;
-                          "
-                        >
-                          Contact us
-                        </a>
-                      </div>
-                         <p
-                        style="
-                          font-weight: 400;
-                          font-size: 16px;
-                          color: #313d5b;
-                          margin: 20px auto;
-                          text-align: justify;
-                        "
-                      >
-                      ${reason}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>
-                    <div style="padding: 20px">
-                      ${emailTemplateFooter}
-                    </div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </div>
-  </body>
-</html>
-`;
-};
-const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
-  const {
-    customerName,
-    customerEmail,
-    customerBill,
-    shippingDetails,
-    //Vendor Info
-    vendorName,
-    vendorEmail,
-    orderNumber,
-    vendorBill,
-    status,
-  } = info;
-  const totalDiscount = customerOrders.reduce(
-    (sum, item) => sum + (item.discount || 0),
-    0
-  );
-  const orderStatusMessage = (status) => {
-    switch (status) {
-      case "Pending":
-        return `The order (${orderNumber}) is pending.`;
-      case "Processing":
-        return `The order (${orderNumber}) is currently being processed.`;
-      case "Shipped":
-        return `The order (${orderNumber}) has been shipped!`;
-      case "Delivered":
-        return `The order (${orderNumber}) has been delivered!`;
-      case "Cancelled":
-        return `The order (${orderNumber}) has been cancelled.`;
-      case "Confirmed":
-        return `The order (${orderNumber}) has been placed.`;
-      default:
-        return "Something gonna wrong. Please contact developer.";
-    }
-  };
-  return `<!DOCTYPE html>
-<html
-  lang="en"
-  dir="ltr"
-  xmlns:v="urn:schemas-microsoft-com:vml"
-  xmlns:o="urn:schemas-microsoft-com:office:office"
->
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=yes"
-    />
-    <meta
-      name="format-detection"
-      content="telephone=no, date=no, address=no, email=no, url=no"
-    />
-    <meta name="x-apple-disable-message-reformatting" />
-    <!-- Set color scheme to light only -->
-    <!-- <meta name="color-scheme" content="light" />
-    <meta name="supported-color-schemes" content="light" /> -->
-    <!--[if mso]>
-      <noscript>
-        <xml>
-          <o:OfficeDocumentSettings>
-            <o:PixelsPerInch>96</o:PixelsPerInch>
-          </o:OfficeDocumentSettings>
-        </xml>
-      </noscript>
-    <![endif]-->
-    <style>
-      @import url(https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap);
-
-      :root {
-        font-family: Outfit, Arial, sans-serif;
-        background-color: #eeeeee;
-      }
-    </style>
-  </head>
-
-  <body
-    class="body"
-    style="background-color: #f4f4f4; padding: 0.6rem; margin: 0"
-  >
-    <div
-      role="article"
-      aria-roledescription="email"
-      aria-label="email name"
-      lang="en"
-      dir="ltr"
-      style="font-size: medium; font-size: max(16px, 1rem)"
-    >
-      <!-- Start of the email content -->
-      <div
-        class="table-wrapper"
-        style="max-width: 500px; margin: 16px auto; padding: 20px"
-      >
-        <table cellspacing="0" cellpadding="0" border="0" width="100%">
-          <tr>
-            <td align="left">${emailTemplateLogo}</td>
-          </tr>
-          <tr style="background-color: #fff">
-            <td>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="width: 100%">
-                    <div
-                      style="
-                        border-bottom: 1px solid #ddd;
-                        font-weight: 500;
-                        text-align: left;
-                        padding: 10px 20px;
-                      "
-                    >
-                      Customer : ${customerName}
-                    </div>
-                    <div style="border-radius: 24px; padding: 30px">
-                      <h1
-                        style="
-                          font-style: normal;
-                          font-weight: 500;
-                          font-size: 24px;
-                          color: #313d5b;
-                          text-align: left;
-                          letter-spacing: 0.02em;
-                        "
-                      >
-                        ${orderStatusMessage(status)}
-                      </h1>
-
-                      <!-- Begin order details table -->
-                      <table
-                        cellpadding="0"
-                        cellspacing="0"
-                        width="100%"
-                        style="
-                          margin: 20px 0;
-                          border-collapse: collapse;
-                          font-size: 12px;
-                        "
-                      >
-                        <thead>
-                          <tr>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: left;
-                              "
-                            >
-                              Item
-                            </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: center;
-                              "
-                            >
-                              Quantity
-                            </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                              Price
-                            </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                              Total Price
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          ${customerOrders
-                            .map(
-                              (row) => `
-                          <tr>
-                            <td style="padding: 10px 0">
-                              ${row.item}
-                              <br />
-                              ${row?.variant ? `Variant: ${row?.variant}` : ""}
-                            </td>
-                            <td style="padding: 10px; text-align: center">
-                              ${row.quantity}
-                            </td>
-                            <td style="padding: 10px; text-align: right">
-                              ${row.price}
-                            </td>
-                            <td style="padding: 10px; text-align: right">
-                              ${row.totalPrice}
-                            </td>
-                          </tr>
-                          `
-                            )
-                            .join("")}
-                          <tr>
-                            <td
-                              colspan="3"
-                              style="padding: 10px; text-align: right"
-                            >
-                              Discount(-)
-                            </td>
-                            <td style="padding: 10px; text-align: right">
-                              Tk. ${totalDiscount}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td
-                              colspan="3"
-                              style="padding: 10px; text-align: right"
-                            >
-                              Total
-                            </td>
-                            <td style="padding: 10px; text-align: right">
-                              Tk. ${customerBill}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <!-- End order details table -->
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="3">
-                    <div style="border-radius: 24px; padding: 30px">
                       <table width="100%" cellpadding="20" cellspacing="0">
                         <tr>
                           <td
-                            style="
-                              padding: 5px;
-                              border-top: 1px solid #ddd;
-                              text-align: left;
-                            "
+                            align="center"
+                            style="background-color: #eeeeee; padding: 10px"
                           >
-                            Shipping Details :
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Name :
-                            </span>
-                            ${shippingDetails.firstName}
-                            ${shippingDetails.lastName}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Phone :
-                            </span>
-                            ${shippingDetails.phone}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Address :
-                            </span>
-                            ${shippingDetails.address}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              City :
-                            </span>
-                            ${shippingDetails.city}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Country :
-                            </span>
-                            ${shippingDetails.country}
-                          </td>
-                        </tr>
-                      </table>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td align="center" style="width: 100%">
-                    <div
-                      style="
-                        border-bottom: 1px solid #ddd;
-                        font-weight: 500;
-                        text-align: left;
-                        padding: 10px 20px;
-                      "
-                    >
-                      Vendor : ${vendorName}
-                    </div>
-                    <div style="border-radius: 24px; padding: 30px">
-                      <!-- Begin order details table -->
-                      <table
-                        cellpadding="0"
-                        cellspacing="0"
-                        width="100%"
-                        style="
-                          margin: 20px 0;
-                          border-collapse: collapse;
-                          font-size: 12px;
-                        "
-                      >
-                        <thead>
-                          <tr>
-                            <th
+                            <p
+                              class="footer-find-us"
                               style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: left;
+                                font-size: 0.875rem;
+                                margin: 0;
+                                font-weight: bold;
+                                padding: 0.5rem;
                               "
                             >
-                              Item
-                            </th>
-                            <th
+                              Find us on
+                            </p>
+                            <!-- Social Media Icons -->
+                            <table
+                              align="center"
+                              cellpadding="0"
+                              cellspacing="0"
+                              border="0"
+                              style="margin-top: 10px"
+                            >
+                              <tr>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.facebook.com/p/StrikeO-61553772012607"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484875886-mczg3knv0vs2l8okgjgy.png"
+                                      alt="Facebook"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://x.com/ShopStrikeO"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484909927-rd8eoqkrkyl5pjvenorx.png"
+                                      alt="Twitter"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                                <td style="padding: 0 5px">
+                                  <a
+                                    href="https://www.linkedin.com/company/strikeo"
+                                    target="_blank"
+                                    style="
+                                      color: #111111;
+                                      text-decoration: none;
+                                    "
+                                  >
+                                    <img
+                                      src="https://portal.strikeo.com/uploads/1728484946839-u3aka8pqj72golrbcwg7.png"
+                                      alt="LinkedIn"
+                                      class="social-icon"
+                                      style="
+                                        width: 30px;
+                                        height: 30px;
+                                        margin: 0 5px;
+                                      "
+                                    />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              class="footer-text"
                               style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
+                                padding: 0.5rem;
                                 text-align: center;
+                                color: #888;
+                                font-size: 12px;
+                                margin-top: 20px;
                               "
                             >
-                              Quantity
-                            </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                              Price
-                            </th>
-                            <th
-                              style="
-                                padding: 10px;
-                                border-bottom: 1px solid #ddd;
-                                text-align: right;
-                              "
-                            >
-                              Total Price
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          ${vendorOrders
-                            .map(
-                              (row) => `
-                          <tr>
-                            <td style="padding: 10px 0">
-                              ${row.item}
-                              <br />
-                              ${row?.variant ? `Variant: ${row?.variant}` : ""}
-                            </td>
-                            <td style="padding: 10px; text-align: center">
-                              ${row.quantity}
-                            </td>
-                            <td style="padding: 10px; text-align: right">
-                              ${row.price}
-                            </td>
-                            <td style="padding: 10px; text-align: right">
-                              ${row.totalPrice}
-                            </td>
-                          </tr>
-                          `
-                            )
-                            .join("")}
-                        
-                          <tr>
-                            <td
-                              colspan="3"
-                              style="padding: 10px; text-align: right"
-                            >
-                              Total
-                            </td>
-                            <td style="padding: 10px; text-align: right">
-                              Tk. ${vendorBill}
-                            </td>
-                          </tr>
-                        </tbody>
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/privacy-policy"
+                                target="_blank"
+                                >Privacy Policy</a
+                              >
+                              |
+                              <a
+                                style="color: #111111; text-decoration: none"
+                                href="https://www.strikeo.com/legal/terms-conditions"
+                                target="_blank"
+                                >Terms & Conditions</a
+                              >
+                              <br /><br />
+                              This is an automatically generated e-mail. Please
+                              do not reply.
+                            </p>
+                          </td>
+                        </tr>
                       </table>
-                      <!-- End order details table -->
                     </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div style="padding: 20px">${emailTemplateFooter}</div>
                   </td>
                 </tr>
               </table>
@@ -3288,6 +4044,4 @@ module.exports = {
   contactUsMailTemplate,
   customerOrderPlaceNotificationVendorTemplate,
   orderUpdateStatusForCustomTemplate,
-  orderCreateFailedEmailTemplate,
-  orderAdminOrderEmailTemplate,
 };

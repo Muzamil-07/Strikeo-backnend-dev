@@ -9,6 +9,7 @@ const router = require("./routes/index.js");
 const passport = require("passport");
 const bodyParser = require("body-parser");
 const scheduleTop10BrandsJob = require("./Jobs/Top10Brands.js");
+
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
 const PORT = isProd ? 3000 : 8000;
@@ -24,7 +25,7 @@ mongoose
     console.error(`Error: ${err}`);
     process.exit(0);
   })
-  .then((r) => {
+  .then(() => {
     scheduleTop10BrandsJob();
     console.log(
       `Connected to db in ${process.env.NODE_ENV || "development"} environment`
@@ -61,14 +62,29 @@ app.use(router);
 app.use(httpResponse.Middleware);
 app.use(express.static("public"));
 
-app.listen(PORT, () => {
+// Capture the server instance
+const server = app.listen(PORT, () => {
   console.log(`Listening at port ${PORT}.`);
 });
 
-process.on("unhandledRejection", function (err) {
-  console.log(`${err.name} : ${err.message}`);
-  console.log(`Server is shutting down ......`);
-  server.close(function () {
-    process.exit(1);
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (err) => {
+  console.error(`Unhandled Rejection: ${err.name} : ${err.message}`);
+
+  // Optionally, log the stack trace for better debugging
+  console.error(err.stack);
+
+  console.log("Shutting down the server...");
+
+  // Close the server and exit the process
+  server.close(() => {
+    console.log("Server closed successfully.");
+    process.exit(1); // Exit with failure
   });
+
+  // If the server takes too long to close, force the exit
+  setTimeout(() => {
+    console.error("Forcing shutdown due to timeout.");
+    process.exit(1);
+  }, 30000); // 30 seconds timeout
 });

@@ -16,10 +16,6 @@ const { captureTransaction } = require("./transactionHandler.js");
 const { tranStatusFormat } = require("./initDataProcess.js");
 const Cart = require("../../models/Cart.js");
 const { cartFormatForSelectedItems } = require("../../utils/Cart.js");
-const {
-  sslczNotification,
-  handleEmailAfterPaymentAndOrderDone,
-} = require("../../utils/mailer.js");
 const { handleTransactionProcessNotify } = require("../../utils/Order.js");
 // const dummyTranId = "SSLCZ_TEST_59bd349436a7k"; //change its last char if id already taken
 const getPaymentOrder = async (paymentId) => {
@@ -40,25 +36,25 @@ exports.init = async (req, res, next) => {
     state,
     zipCode,
     phone,
-    bill,
     productNames,
+    productCats,
     noOfItems,
-    cart,
+    bill,
   } = req.body;
 
+  const validationError = validateAddress(req.body);
+  if (validationError) return next(new BadRequestResponse(validationError));
+
   const data = {
-    cart,
-    total_amount: bill,
     currency: "BDT",
     tran_id: `sslcz-${uuidv4()}`, // use unique tran_id for each api call
     success_url: `${BACKEND_URL}/api/payment/success`,
     fail_url: `${BACKEND_URL}/api/payment/fail`,
     cancel_url: `${BACKEND_URL}/api/payment/cancel`,
-    // ipn_url: `https://a851-116-90-112-192.ngrok-free.app/api/payment/ipn_listener`,
     shipping_method: "NO",
     product_name: productNames,
     num_of_item: noOfItems,
-    product_category: "Electronic",
+    product_category: productCats,
     product_profile: "general",
     cus_name: `${firstName} ${lastName}`,
     cus_email: email,
@@ -91,8 +87,9 @@ exports.init = async (req, res, next) => {
       return next(new BadRequestResponse("Cart is empty"));
     }
 
-    const { selectedItems = [], selectedPayableAmount } =
-      await cartFormatForSelectedItems(JSON.parse(JSON.stringify(cart)));
+    const { selectedItems = [] } = await cartFormatForSelectedItems(
+      JSON.parse(JSON.stringify(cart))
+    );
 
     if (selectedItems?.length <= 0) {
       return next(
@@ -100,20 +97,20 @@ exports.init = async (req, res, next) => {
       );
     }
 
-    if (selectedPayableAmount <= 0) {
+    if (bill <= 0) {
       return next(
         new BadRequestResponse(
-          "The payable amount for selected items must be greater than zero."
+          "The payable amount for selected items cannot be zero '0'"
         )
       );
     }
 
-    const result = await init(data);
+    const result = await init({ ...data, total_amount: bill });
     if (result?.status?.toLowerCase() === "success" && result?.sessionkey) {
       const payment = new Payment({
         paymentId: data.tran_id,
         customer: req.user.id,
-        amount: selectedPayableAmount,
+        amount: bill,
         method: "sslCommerz",
         currency: data.currency,
       });
@@ -199,8 +196,6 @@ exports.success = async (req, res, next) => {
   console.log(`Payemnt Success with transaction id => ${req?.body?.tran_id}`);
   const data = await getPaymentOrder(req?.body?.tran_id);
   const orderNumber = data?.orders.map((o) => `${o?.orderNumber}`);
-  ///Email notification about orders when transaction completed and order placed successfully
-  await handleEmailAfterPaymentAndOrderDone(data);
   // if (!orderNumber) {
   //   return res.redirect(
   //     `${FRONTEND_URL}/checkout/payment/failed?tran_id=${req?.body?.tran_id}&amount=${req?.body?.amount}&order=${orderNumber}`

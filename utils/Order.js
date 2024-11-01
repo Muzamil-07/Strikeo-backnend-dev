@@ -6,153 +6,74 @@ const {
   sslczNotification,
 } = require("./mailer");
 const { v4: uuidv4 } = require("uuid");
-const { default: mongoose } = require("mongoose");
 const { getProductId, getNumber } = require("./stringsNymber");
-const Product = require("../models/Product");
+const {
+  getCities,
+  getZonesInCity,
+  priceCalculation,
+} = require("./PathaoService");
 
-const handleInventoryAndVendorBill = async (items = [], isNew = false) => {
-  if (isNew) {
-    if (!items || !Array.isArray(items) || !items.length) {
-      throw new Error({ message: "Order items array is required" });
-    }
+const getShippingCost = async (shippingDetails, items) => {
+  const { city = "", zone = "" } = shippingDetails;
 
-    let vendorBill = 0;
-    const validItems = [];
+  // Fetch the list of cities
+  const cities = await getCities();
+  const foundCity = cities?.data?.data?.find((c) => c.city_name === city);
+  if (!foundCity) throw new Error("City not found");
 
-    // Only track inventory reduction for new orders
-    for (const item of items) {
-      const product = item?.product;
-      if (!product || !product?.isActive) {
-        console.error(`* Product with id => ${item?.product} not found. *`);
-        continue;
-      }
+  // Fetch the zones in the found city
+  const zones = await getZonesInCity(foundCity?.city_id);
+  const foundZone = zones?.data?.data?.find((z) => z.zone_name === zone);
+  if (!foundZone) throw new Error("Zone not found");
 
-      let variant = null;
-      const quantity = getNumber(item.quantity);
-      const productStock = getNumber(product?.inventory?.stock);
+  // // Fetch the areas in the found zone
+  // const areas = await getAreasInZone(foundZone.id);
+  // const foundArea = areas.find((a) => a.area_name === area);
+  // if (!foundArea) throw new Error("Area not found");
+  let missingData = "";
 
-      if (item?.variantSKU) {
-        variant = product?.variants.find((v) => v?.sku === item?.variantSKU);
-        if (!variant) {
-          console.error(
-            `* Variant with SKU => ${item?.variantSKU} not found. *`
-          );
-          continue;
-        }
-
-        const variantStock = getNumber(variant?.inventory?.stock);
-
-        if (variant?.inventory?.trackInventory) {
-          if (variant?.inventory?.allowBackorders) {
-            console.error(
-              `* Backorders are allowed for variant SKU: ${variant?.sku}. No stock reduction. *`
-            );
-            vendorBill += getNumber(variant?.pricing?.costPrice) * quantity; // Accumulate cost
-            validItems.push({
-              ...item,
-              product: makeObjectId(getProductId(product)),
-            });
-          } else {
-            if (quantity > variantStock || variantStock === 0) {
-              console.error(
-                `* Variant with SKU => ${variant?.sku} is out of stock. *`
-              );
-              continue; // Skip to next item
-            }
-
-            // Update stock for the variant using `updateOne`
-            await Product.updateOne(
-              { _id: item?.product, "variants.sku": item.variantSKU },
-              {
-                $set: { "variants.$.inventory.stock": variantStock - quantity },
-              }
-            );
-
-            vendorBill += getNumber(variant?.pricing?.costPrice) * quantity;
-            validItems.push({
-              ...item,
-              product: makeObjectId(getProductId(product)),
-            });
-          }
-        } else {
-          if (variant?.inventory?.inStock) {
-            console.error(
-              `* Tracking inventory is OFF but In Stock is ON for variant SKU: ${
-                variant?.sku || "N/A"
-              }. No stock reduction. *`
-            );
-            vendorBill += getNumber(variant?.pricing?.costPrice) * quantity; // Accumulate cost
-            validItems.push({
-              ...item,
-              product: makeObjectId(getProductId(product)),
-            });
-          } else {
-            console.error(
-              `* Tracking inventory and In Stock is OFF for variant SKU => ${
-                variant?.sku || "N/A"
-              }, Item removed from order *`
-            );
-          }
-        }
-      } else {
-        item.variantSnapshot = null;
-
-        if (product?.inventory?.trackInventory) {
-          if (product?.inventory?.allowBackorders) {
-            console.error(
-              `Backorders are allowed for product SKU => ${product?.sku}. No stock reduction.`
-            );
-            vendorBill += getNumber(product?.pricing?.costPrice) * quantity; // Accumulate cost
-            validItems.push({
-              ...item,
-              product: makeObjectId(getProductId(product)),
-            });
-          } else {
-            if (quantity > productStock || productStock === 0) {
-              console.error(
-                `Product with SKU => ${product?.sku} is out of stock`
-              );
-              continue; // Skip to next item
-            }
-
-            // Update stock for the product
-            product.inventory.stock = productStock - quantity;
-            vendorBill += getNumber(product?.pricing?.costPrice) * quantity;
-            await product.save({ validateModifiedOnly: true });
-            validItems.push({
-              ...item,
-              product: makeObjectId(getProductId(product)),
-            });
-          }
-        } else {
-          if (product?.inventory?.inStock) {
-            console.error(
-              `Tracking inventory is OFF but In Stock is ON for product SKU => ${
-                product?.sku || "N/A"
-              }. No stock reduction.`
-            );
-            vendorBill += getNumber(product?.pricing?.costPrice) * quantity; // Accumulate cost
-            validItems.push({
-              ...item,
-              product: makeObjectId(getProductId(product)),
-            });
-          } else {
-            console.error(
-              `* Tracking inventory and In Stock is OFF for product SKU => ${
-                product?.sku || "N/A"
-              }, Item removed from order. *`
-            );
-          }
-        }
-      }
-    }
-
-    // Return the updated items and vendor bill
-    return { validItems, vendorBill: Math.max(0, vendorBill) };
+  if (!foundCity?.city_id) {
+    missingData += "City ID ";
+  }
+  if (!foundZone?.zone_id) {
+    missingData += "Zone ID ";
   }
 
-  // If not a new order, return an empty result or appropriate message
-  return { validItems: [], vendorBill: 0 };
+  if (missingData) {
+    throw new Error(
+      `Missing required data: ${missingData.trim().replace(" ", ", ")}`
+    );
+  }
+
+  // Prepare the request body for price calculation
+  const selectedWeight = items?.reduce(
+    (acc, item) =>
+      acc +
+      getNumber(
+        item?.variantDetails
+          ? item?.variantDetails?.weight
+          : item?.product?.weight
+      ) *
+        getNumber(item?.quantity),
+    0
+  );
+
+  if (selectedWeight) {
+    const priceRequestBody = {
+      store_id: 217213,
+      item_type: 2,
+      delivery_type: 48,
+      item_weight: selectedWeight,
+      recipient_city: foundCity?.city_id,
+      recipient_zone: foundZone?.zone_id,
+    };
+
+    // Call the price calculation API
+    const shippingCostResponse = await priceCalculation(priceRequestBody);
+    return shippingCostResponse?.data?.final_price;
+  } else {
+    return 0;
+  }
 };
 
 const createSingleOrder = async (
@@ -163,10 +84,19 @@ const createSingleOrder = async (
   user
 ) => {
   try {
+    const shippingCost = await getShippingCost(
+      shippingDetails,
+      orderData.items
+    );
+    shippingDetails.shippingCost = shippingCost;
+
+    const customerBillWithShipping =
+      getNumber(orderData.totalAmount) + getNumber(shippingCost);
+
     const payment = new Payment({
       paymentId: `cod-${uuidv4()}`,
       customer: userId,
-      amount: orderData.totalAmount,
+      amount: customerBillWithShipping,
       method: "cash",
     });
 
@@ -616,5 +546,5 @@ module.exports = {
   createSingleOrder,
   groupItemsByCompany,
   handleTransactionProcessNotify,
-  handleInventoryAndVendorBill,
+  getShippingCost,
 };
