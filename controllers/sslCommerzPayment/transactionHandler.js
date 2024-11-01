@@ -207,7 +207,9 @@ const captureTransaction = async (data, ipn_Payload) => {
         customerBill: orderData.totalAmount,
         vendorBill: orderData.vendorAmount,
         payment: getProductId(payment),
-        shippingDetails: { ...activeBillingAddress, shippingCost },
+        shippingDetails: JSON.parse(
+          JSON.stringify({ ...activeBillingAddress, shippingCost })
+        ),
         isConfirmed: true,
       });
 
