@@ -178,7 +178,7 @@ const getAllProducts = async (req, res, next) => {
       all,
       category,
       company,
-      limit: limitPerPage,
+      itemsPerPage: limitPerPage,
       status: productStatus,
     } = req.query;
     const roleType = req.user.role.type;
