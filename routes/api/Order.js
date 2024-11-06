@@ -4,6 +4,7 @@ const auth = require("../../middleware/auth.js");
 
 const router = express.Router();
 
+router.get("/all", auth.verifyToken, auth.isAdmin, OrderController.getOrders);
 router.get("/confirm", OrderController.confirmUserOrder);
 router.use(auth.verifyToken, auth.isOptional);
 router.post("/", OrderController.createOrder);

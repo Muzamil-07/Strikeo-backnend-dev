@@ -1475,7 +1475,7 @@ const emailChangeTemplate = (user) => {
 </html>
 `;
 };
-const orderConfirmTemplate = (data, user, bill) => {
+const orderConfirmTemplate = (data, user, bill, shippingCost) => {
   const totalDiscount = data.reduce(
     (sum, item) => sum + (item.discount || 0),
     0
@@ -1669,8 +1669,18 @@ const orderConfirmTemplate = (data, user, bill) => {
                               <td style="padding: 10px; text-align: right; ">Tk. ${totalDiscount}</td>
                             </tr>
                             <tr>
-                              <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
+                              <td colspan="3" style="padding: 10px; text-align: right; ">Sub Total</td>
                               <td style="padding: 10px; text-align: right; ">Tk. ${bill}</td>
+                            </tr>
+                            <tr>
+                              <td colspan="3" style="padding: 10px; text-align: right; ">Delivery Charge</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${shippingCost}</td>
+                            </tr>
+                            <tr>
+                              <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${
+                                bill + shippingCost
+                              }</td>
                             </tr>
                         </tbody>
                       </table>
@@ -2358,11 +2368,18 @@ const contactUsMailTemplate = (data) => {
 `;
 };
 
-const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
+const orderUpdateStatusForCustomTemplate = (
+  data,
+  orderNo,
+  bill,
+  status,
+  shippingDetails
+) => {
   const totalDiscount = data.reduce(
     (sum, item) => sum + (item.discount || 0),
     0
   );
+  const shippingCost = shippingDetails.shippingCost || 0;
   const orderStatusMessage = (status) => {
     switch (status) {
       case "Pending":
@@ -2569,8 +2586,18 @@ const orderUpdateStatusForCustomTemplate = (data, orderNo, bill, status) => {
                               <td style="padding: 10px; text-align: right; ">Tk. ${totalDiscount}</td>
                             </tr>
                             <tr>
-                              <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
+                              <td colspan="3" style="padding: 10px; text-align: right; ">Sub Total</td>
                               <td style="padding: 10px; text-align: right; ">Tk. ${bill}</td>
+                            </tr>
+                            <tr>
+                              <td colspan="3" style="padding: 10px; text-align: right; ">Delivery Charge</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${shippingCost}</td>
+                            </tr>
+                            <tr>
+                              <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${
+                                bill + shippingCost
+                              }</td>
                             </tr>
                         </tbody>
                       </table>
@@ -2853,6 +2880,7 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
     (sum, item) => sum + (item.discount || 0),
     0
   );
+  const shippingCost = shippingDetails?.shippingCost || 0;
   const orderStatusMessage = (status) => {
     switch (status) {
       case "Pending":
@@ -3052,10 +3080,32 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
                               colspan="3"
                               style="padding: 10px; text-align: right"
                             >
-                              Total
+                             Sub Total
                             </td>
                             <td style="padding: 10px; text-align: right">
                               Tk. ${customerBill}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              colspan="3"
+                              style="padding: 10px; text-align: right"
+                            >
+                              Delivery Charge
+                            </td>
+                            <td style="padding: 10px; text-align: right">
+                              Tk. ${shippingCost}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              colspan="3"
+                              style="padding: 10px; text-align: right"
+                            >
+                              Total
+                            </td>
+                            <td style="padding: 10px; text-align: right">
+                              Tk. ${shippingCost + customerBill}
                             </td>
                           </tr>
                         </tbody>

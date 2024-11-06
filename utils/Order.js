@@ -136,7 +136,8 @@ const createSingleOrder = async (
         bill: orderData.totalAmount,
         owner: userId,
       },
-      user?.email
+      user?.email,
+      shippingCost
     );
 
     return order;

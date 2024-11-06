@@ -27,7 +27,15 @@ const twilioClient = require("twilio")(accountSid, authToken);
 
 const getOrders = async (req, res, next) => {
   try {
-    const { page, search, status, limit, user, company, completed } = req.query;
+    const {
+      page,
+      search,
+      status,
+      limit = 10,
+      user,
+      company,
+      completed,
+    } = req.query;
     const roleType = req.user.role.type;
     const orderNumber = new RegExp(search, "i");
 
@@ -689,7 +697,8 @@ const updateOrder = async (req, res, next) => {
       items,
       customerEmail,
       customerBill,
-      status
+      status,
+      shippingDetails
     );
 
     ///Send the order notification to Strikeo Admin Email Address

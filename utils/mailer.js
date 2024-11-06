@@ -89,7 +89,7 @@ const sendEmail = (user, subject, body) => {
   }
 };
 
-const confirmOrder = async (user, cart, userEmail) => {
+const confirmOrder = async (user, cart, userEmail, shippingCost) => {
   try {
     const transporter = setTransporter();
     const data = cart.items.map((item) => {
@@ -124,7 +124,7 @@ const confirmOrder = async (user, cart, userEmail) => {
       to: userEmail,
       from: `"Strikeo" <${process.env.SMTP_USER}>`,
       subject: "Order Confirmation",
-      html: orderConfirmTemplate(data, user, bill),
+      html: orderConfirmTemplate(data, user, bill, Number(shippingCost)),
     };
 
     transporter.sendMail(msg, (err, info) => {
@@ -200,7 +200,8 @@ const customerOrderStatusNotification = async (
   items,
   userEmail,
   bill,
-  status
+  status,
+  shippingDetails
 ) => {
   try {
     const transporter = setTransporter();
@@ -238,7 +239,13 @@ const customerOrderStatusNotification = async (
       to: userEmail,
       from: `"Strikeo" <${process.env.SMTP_USER}>`,
       subject: `Order Status : Order No.- ${orderNo}`,
-      html: orderUpdateStatusForCustomTemplate(data, orderNo, bill, status),
+      html: orderUpdateStatusForCustomTemplate(
+        data,
+        orderNo,
+        bill,
+        status,
+        shippingDetails
+      ),
     };
 
     await transporter.sendMail(msg);
@@ -248,7 +255,13 @@ const customerOrderStatusNotification = async (
       to: process.env.SMTP_USER,
       from: `"Strikeo" <${process.env.SMTP_USER}>`,
       subject: `Order Status : Order No.- ${orderNo}`,
-      html: orderUpdateStatusForCustomTemplate(data, orderNo, bill, status),
+      html: orderUpdateStatusForCustomTemplate(
+        data,
+        orderNo,
+        bill,
+        status,
+        shippingDetails
+      ),
     };
 
     await transporter.sendMail(msgForStrikeo);
@@ -573,7 +586,8 @@ const handleEmailAfterPaymentAndOrderDone = async (data) => {
           items,
           customerEmail,
           customerBill,
-          status
+          status,
+          shippingDetails
         );
         ///Strikeo Admin Email Notification
 
