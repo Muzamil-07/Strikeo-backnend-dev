@@ -20,7 +20,7 @@ const validatePositiveNumber = (value) => {
 const validateUniqueVariantSKUs = function () {
   const skuSet = new Set();
   for (let variant of this.variants) {
-    if (skuSet.has(variant.sku)) {
+    if (variant.sku?.trim() && skuSet.has(variant.sku)) {
       return false; // Duplicate SKU found
     }
     skuSet.add(variant.sku);

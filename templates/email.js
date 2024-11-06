@@ -1572,7 +1572,9 @@ const orderConfirmTemplate = (data, user, bill, shippingCost) => {
                           text-align: justify;
                         "
                       >
-                        You recently placed an order of TK. ${bill} on Strikeo for
+                        You recently placed an order of TK. ${
+                          bill + shippingCost
+                        } on Strikeo for
                         the following items:
                       </p>
 

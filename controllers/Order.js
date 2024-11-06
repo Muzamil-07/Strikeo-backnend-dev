@@ -11,7 +11,7 @@ const { default: mongoose } = require("mongoose");
 const Agent = require("../models/Agent.js");
 const { createMessageBody } = require("../utils/message.js");
 
-const { getProductId } = require("../utils/stringsNymber.js");
+const { getProductId, getNumber } = require("../utils/stringsNymber.js");
 const { createSingleOrder, groupItemsByCompany } = require("../utils/Order.js");
 const { cartFormatForSelectedItems } = require("../utils/Cart.js");
 const {
@@ -540,8 +540,11 @@ const confirmUserOrder = async (req, res, next) => {
     };
     await orderAdminNotification(orderInfo);
 
+    const shippingCostWithCustomerBill =
+      customerBill + order?.shippingDetails.shippingCost;
+
     return res.redirect(
-      `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${order?.orderNumber}&bill=${order?.customerBill}`
+      `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${order?.orderNumber}&bill=${shippingCostWithCustomerBill}`
     );
   } catch (error) {
     console.log("While confirming order => ", error);
