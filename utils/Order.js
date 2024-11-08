@@ -11,7 +11,7 @@ const {
   getCities,
   getZonesInCity,
   priceCalculation,
-} = require("./PathaoService");
+} = require("./pathaoService");
 
 const getShippingCost = async (shippingDetails, items) => {
   const { city = "", zone = "" } = shippingDetails;

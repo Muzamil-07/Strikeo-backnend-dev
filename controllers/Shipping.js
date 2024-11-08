@@ -1,5 +1,5 @@
 const { OkResponse, BadRequestResponse } = require("express-http-response");
-const pathaoService = require("../utils/PathaoService");
+const pathaoService = require("../utils/pathaoService");
 
 // Issue an Access Token
 async function issueAccessToken(req, res, next) {
