@@ -734,14 +734,19 @@ const updateOrder = async (req, res, next) => {
 
 const getVendorStats = async (req, res, next) => {
   try {
-    const { from, to } = req.query;
+    if (!req?.user?.company || !mongoose.isValidObjectId(req?.user?.company))
+      return next(new BadRequestResponse("Valid company ID is required"));
     const userId = new mongoose.Types.ObjectId(req?.user?.company);
+    const { from: fromDate, to: toDate } = req.query;
+
+    // Check and parse dates
+    const from = fromDate ? new Date(`${fromDate}T00:00:00.000Z`) : null;
+    const to = toDate ? new Date(`${toDate}T23:59:59.999Z`) : null;
     const query = {
       isConfirmed: true,
       company: userId,
-      orderedAt: { $gte: new Date(from), $lte: new Date(to) },
+      orderedAt: { $gte: from, $lte: to },
     };
-
     // Combine the summary, status counts, and date-wise order count in a single aggregation
     const summaryAggregation = await Order.aggregate([
       { $match: query },

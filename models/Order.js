@@ -481,62 +481,62 @@ OrderSchema.pre("save", async function (next) {
     for (const item of items) {
       const product = await Product.findById(item?.product);
       if (!product) {
-        console.error(`* Product with id => ${item?.product} not found. *`);
+        console.error(`## Product with id => ${item?.product} not found. ##`);
         continue;
       }
       if (!product?.isActive) {
-        console.error(`* Product with id => ${item?.product} not active. *`);
+        console.error(`## Product with id => ${item?.product} not active. ##`);
         continue;
       }
 
       let variant = null;
       const quantity = getNumber(item.quantity);
-      const productStock = getNumber(product?.inventory?.stock);
 
       if (item?.variantSKU) {
         variant = product?.variants.find((v) => v?.sku === item?.variantSKU);
         if (!variant) {
           console.error(
-            `* Variant with SKU => ${item?.variantSKU} not found. *`
+            `## Variant with SKU => ${item?.variantSKU} not found. ##`
           );
           continue;
         }
 
-        const variantStock = getNumber(variant?.inventory?.stock);
-
         if (variant?.inventory?.trackInventory) {
-          if (variant?.inventory?.allowBackorders) {
-            console.log(
-              `* Backorders are allowed for variant SKU: ${variant?.sku}. No stock reduction. *`
-            );
-          } else {
-            if (quantity > variantStock || variantStock === 0) {
+          const variantStock = getNumber(variant?.inventory?.stock);
+
+          if (quantity > variantStock || variantStock === 0) {
+            if (variant?.inventory?.allowBackorders) {
+              console.log(
+                `## Backorders are allowed for variant SKU: ${variant?.sku}. No stock reduction. ##`
+              );
+              continue; // Skip to next item
+            } else {
               console.error(
-                `* Variant with SKU => ${variant?.sku} is out of stock. *`
+                `## Variant with SKU => ${variant?.sku} is out of stock. ##`
               );
               continue; // Skip to next item
             }
-
-            // Update stock for the variant using `updateOne`
-            await Product.updateOne(
-              { _id: item?.product, "variants.sku": item.variantSKU },
-              {
-                $set: { "variants.$.inventory.stock": variantStock - quantity },
-              }
-            );
           }
+
+          // Update stock for the variant using `updateOne`
+          await Product.updateOne(
+            { _id: item?.product, "variants.sku": item.variantSKU },
+            {
+              $set: { "variants.$.inventory.stock": variantStock - quantity },
+            }
+          );
         } else {
           if (variant?.inventory?.inStock) {
             console.error(
-              `* Tracking inventory is OFF but In Stock is ON for variant SKU: ${
+              `## Tracking inventory is OFF but In Stock is ON for variant SKU: ${
                 variant?.sku || "N/A"
-              }. No stock reduction. *`
+              }. No stock reduction. ##`
             );
           } else {
             console.error(
-              `* Tracking inventory and In Stock is OFF for variant SKU => ${
+              `## Tracking inventory and In Stock is OFF for variant SKU => ${
                 variant?.sku || "N/A"
-              }, No stock reduction. *`
+              }, No stock reduction. ##`
             );
           }
         }
@@ -544,34 +544,37 @@ OrderSchema.pre("save", async function (next) {
         item.variantSnapshot = null;
 
         if (product?.inventory?.trackInventory) {
-          if (product?.inventory?.allowBackorders) {
-            console.error(
-              `Backorders are allowed for product SKU => ${product?.sku}. No stock reduction.`
-            );
-          } else {
-            if (quantity > productStock || productStock === 0) {
+          const productStock = getNumber(product?.inventory?.stock);
+
+          if (quantity > productStock || productStock === 0) {
+            if (product?.inventory?.allowBackorders) {
               console.error(
-                `Product with SKU => ${product?.sku} is out of stock`
+                `## Backorders are allowed for product SKU => ${product?.sku}. No stock reduction. ##`
+              );
+              continue; // Skip to next item
+            } else {
+              console.error(
+                `## Product with SKU => ${product?.sku} is out of stock ##`
               );
               continue; // Skip to next item
             }
-
-            // Update stock for the product
-            product.inventory.stock = productStock - quantity;
-            await product.save({ validateModifiedOnly: true });
           }
+
+          // Update stock for the product
+          product.inventory.stock = productStock - quantity;
+          await product.save({ validateModifiedOnly: true });
         } else {
           if (product?.inventory?.inStock) {
             console.error(
-              `Tracking inventory is OFF but In Stock is ON for product SKU => ${
+              `## Tracking inventory is OFF but In Stock is ON for product SKU => ${
                 product?.sku || "N/A"
-              }. No stock reduction.`
+              }. No stock reduction. ##`
             );
           } else {
             console.error(
-              `* Tracking inventory and In Stock is OFF for product SKU => ${
+              `## Tracking inventory and In Stock is OFF for product SKU => ${
                 product?.sku || "N/A"
-              }, Item removed from order. *`
+              }, Item removed from order. ##`
             );
           }
         }

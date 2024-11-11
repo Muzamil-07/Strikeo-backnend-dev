@@ -303,14 +303,14 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 
       // Check stock for variants
       if (variant?.inventory?.trackInventory) {
-        if (variant?.inventory?.allowBackorders) {
-          console.info(
-            `* Backorders are allowed for variant SKU: ${variant?.sku}. Vendor bill will be add. *`
-          );
-        } else {
-          const variantStock = getNumber(variant?.inventory?.stock);
+        const variantStock = getNumber(variant?.inventory?.stock);
 
-          if (quantity > variantStock || variantStock === 0) {
+        if (quantity > variantStock || variantStock === 0) {
+          if (variant?.inventory?.allowBackorders) {
+            console.info(
+              `* Backorders are allowed for variant SKU: ${variant?.sku}. Vendor bill will be add. *`
+            );
+          } else {
             // Track out-of-stock variant
             removedItemsOutOfStock.push({
               name: `${product?.name} Variant: ${variant?.variantName}`,
@@ -364,27 +364,27 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 
       // Check stock for the product if no variant
       if (product?.inventory?.trackInventory) {
-        if (product?.inventory?.allowBackorders) {
-          console.info(
-            `Backorders are allowed for product SKU => ${product?.sku}. Vendor bill will be add.`
-          );
-        }
-
         const productStock = getNumber(product?.inventory?.stock);
 
         if (quantity > productStock || productStock === 0) {
-          // Track out-of-stock product
-          removedItemsOutOfStock.push({
-            name: product?.name,
-            price: `${Math.max(
-              0,
-              getNumber(product?.pricing?.salePrice) -
-                getNumber(product?.pricing?.discount)
-            )} X ${quantity}`,
-          });
-          console.info(`Product with SKU => ${product?.sku} is out of stock`);
-          isValidItem = false; // Mark item as invalid
-          continue; // Skip to next item (removing out-of-stock product)
+          if (product?.inventory?.allowBackorders) {
+            console.info(
+              `Backorders are allowed for product SKU => ${product?.sku}. Vendor bill will be add.`
+            );
+          } else {
+            // Track out-of-stock product
+            removedItemsOutOfStock.push({
+              name: product?.name,
+              price: `${Math.max(
+                0,
+                getNumber(product?.pricing?.salePrice) -
+                  getNumber(product?.pricing?.discount)
+              )} X ${quantity}`,
+            });
+            console.info(`Product with SKU => ${product?.sku} is out of stock`);
+            isValidItem = false; // Mark item as invalid
+            continue; // Skip to next item (removing out-of-stock product)
+          }
         }
       } else {
         if (!product?.inventory?.inStock) {
