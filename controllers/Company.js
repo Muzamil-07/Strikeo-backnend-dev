@@ -297,7 +297,7 @@ const createCompany = async (req, res, next) => {
           { _id: vendor },
           {
             company: company._id,
-            status: "completed",
+            isCompleted: true,
             reset_token,
           }
         );

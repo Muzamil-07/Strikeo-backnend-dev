@@ -28,33 +28,49 @@ const twilioClient = require("twilio")(accountSid, authToken);
 const getOrders = async (req, res, next) => {
   try {
     const {
-      page,
-      search,
+      page = 1,
+      search = "",
       status,
       limit = 10,
       user,
       company,
       completed,
     } = req.query;
-    const roleType = req.user.role.type;
-    const orderNumber = new RegExp(search, "i");
 
+    const roleType = req.user.role.type;
+    const orderNumber = search ? new RegExp(search, "i") : undefined;
+    const completedFilter = completed ? JSON.parse(completed) : false;
+
+    // Validation for completed filter
+    if (completed && typeof completedFilter !== "boolean") {
+      return next(
+        new BadRequestResponse("Completion Filter should be a Boolean")
+      );
+    }
+
+    // Role-based parameter validation
     if (
       (roleType === "Vendor" && !company) ||
       (roleType === "User" && !req.user.id)
     ) {
       return next(new BadRequestResponse("Missing required parameters"));
     }
-    //Permission based dynamic query
-    const { query, populateOps, selectOps } = {
+
+    // Permission-based dynamic query construction
+    const roleConfig = {
       Vendor: {
         query: {
           isConfirmed: true,
-          ...(search ? { orderNumber } : {}),
+          ...(orderNumber ? { orderNumber } : {}),
           ...(company ? { company } : {}),
           ...(status ? { status } : {}),
         },
-        populateOps: "customer payment",
+        populateOps: [
+          { path: "customer", select: "firstName lastName" },
+          { path: "company", select: "warehouse" },
+          { path: "agent" },
+          { path: "payment", select: "status method" },
+        ],
         selectOps: {
           orderNumber: 1,
           shippingDetails: 1,
@@ -62,13 +78,14 @@ const getOrders = async (req, res, next) => {
           items: 1,
           status: 1,
           vendorBill: 1,
+          customerBill: 1,
         },
       },
       User: {
         query: {
           customer: req.user.id,
-          ...(completed ? { isCompleted: completed === "true" } : {}),
-          ...(search ? { orderNumber } : {}),
+          ...(completedFilter ? { isCompleted: completedFilter } : {}),
+          ...(orderNumber ? { orderNumber } : {}),
         },
         populateOps: "company payment",
         selectOps: {},
@@ -76,41 +93,34 @@ const getOrders = async (req, res, next) => {
       StrikeO: {
         query: {
           isConfirmed: true,
-          ...(completed ? { isCompleted: completed === "true" } : {}),
-          ...(search ? { orderNumber } : {}),
+          ...(completedFilter ? { isCompleted: completedFilter } : {}),
+          ...(orderNumber ? { orderNumber } : {}),
           ...(user ? { customer: user } : {}),
           ...(company ? { company } : {}),
           ...(status ? { status } : {}),
         },
         populateOps: [
-          {
-            path: "company",
-            select: "name",
-          },
-          {
-            path: "customer",
-            select: "firstName lastName",
-          },
-          {
-            path: "payment",
-            select: "status method",
-          },
+          { path: "company", select: "name" },
+          { path: "customer", select: "firstName lastName" },
+          { path: "agent" },
+          { path: "payment", select: "status method" },
         ],
         selectOps: {},
       },
     }[roleType];
 
-    const offset = page ? (parseInt(page) - 1) * limit : 0;
+    // Calculate pagination offset
+    const offset = (parseInt(page, 10) - 1) * limit;
 
     const options = {
       sort: { createdAt: -1 },
       offset,
       limit,
-      select: selectOps,
-      populate: populateOps,
+      select: roleConfig.selectOps,
+      populate: roleConfig.populateOps,
     };
 
-    const orders = await Order.paginate(query, options);
+    const orders = await Order.paginate(roleConfig.query, options);
 
     return next(
       new OkResponse({
@@ -123,7 +133,7 @@ const getOrders = async (req, res, next) => {
       })
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return next(new BadRequestResponse("Something went wrong"));
   }
 };

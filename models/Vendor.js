@@ -75,9 +75,9 @@ const VendorSchema = new mongoose.Schema(
       ref: "Company",
       default: null,
     },
-    status: {
-      type: String,
-      default: "draft",
+    isCompleted: {
+      type: Boolean,
+      default: false,
     },
     role: {
       type: mongoose.Schema.Types.ObjectId,
@@ -157,7 +157,7 @@ VendorSchema.methods.toAuthJSON = function () {
     isVerified: this.isVerified,
     isActive: this.isActive,
     company: this.company,
-    status: this.status,
+    isCompleted: this.isCompleted,
     role: this.role,
     token: this.generateJWT(),
   };
@@ -178,7 +178,7 @@ VendorSchema.methods.toJSON = function () {
     isVerified: this.isVerified,
     isActive: this.isActive,
     company: this.company,
-    status: this.status,
+    isCompleted: this.isCompleted,
     role: this.role,
     reset_token_expires: this.reset_token?.expires,
   };

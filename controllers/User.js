@@ -2,6 +2,7 @@ const {
   OkResponse,
   BadRequestResponse,
   UnauthorizedResponse,
+  NotFoundResponse,
 } = require("express-http-response");
 
 const User = require("../models/User.js");
@@ -1414,79 +1415,48 @@ const getUserOrders = async (req, res, next) => {
     return next(new BadRequestResponse("Something went wrong"));
   }
 };
+const mongoose = require("mongoose");
+
 const getUserOrderById = async (req, res, next) => {
   try {
-    const orderId = req.params.id;
+    const orderId = req.params?.id;
+    const userId = getProductId(req.user);
+
+    // Validate order id format
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return next(new BadRequestResponse("Invalid order ID"));
+    }
+
+    // Validate user id format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return next(new BadRequestResponse("Invalid user ID"));
+    }
 
     // Query and population options specific to the 'User' role
     const query = {
-      customer: req.user.id,
       _id: orderId,
+      customer: userId,
     };
 
     const populateOps = [
       {
-        path: "items.review",
-        select: "rating description reviewDate",
-      },
-      {
         path: "items.product",
+        populate: { path: "reviews", match: { user: userId } },
+        select: "reviews brand inventory variants seo.slug",
       },
-
       {
         path: "payment",
+        select: "method status",
       },
     ];
 
     // Finding the order for the 'User' role with the specified query and population options
     const order = await Order.findOne(query).populate(populateOps);
-    const jsonOrder = jsonFormat(order);
-    const billingAddress = await Billing.findById(
-      jsonOrder.payment.customer.billingAddresses
-    );
-    const { method, status, discount_amount, amount, currency, customer } =
-      jsonOrder.payment;
-    const {
-      id,
-      firstName,
-      lastName,
-      email,
-      profileImage,
-      gender,
-      dob,
-      isActive,
-      isVerified,
-    } = customer;
-
-    const modifiedOrder = {
-      ...jsonOrder,
-      payment: {
-        method,
-        status,
-        discount_amount,
-        amount,
-        currency,
-        customer,
-      },
-      customer: {
-        id,
-        firstName,
-        lastName,
-        email,
-        profileImage,
-        gender,
-        dob,
-        isActive,
-        isVerified,
-      },
-      billingAddress: jsonFormat(billingAddress),
-    };
-
     if (!order) {
-      return next(new BadRequestResponse("Order not found"));
+      return next(new NotFoundResponse("Order not found"));
     }
 
-    return next(new OkResponse(modifiedOrder));
+    return next(new OkResponse(order.toJSON()));
   } catch (error) {
     console.log(error);
     return next(new BadRequestResponse("Something went wrong"));

@@ -49,6 +49,7 @@ const CompanySchema = new mongoose.Schema(
     warehouse: {
       type: mongoose.Types.ObjectId,
       ref: "Warehouse",
+      required: [true, "Warehouse is required for company"],
     },
     website: {
       type: String,

@@ -213,7 +213,10 @@ const captureTransaction = async (data, ipn_Payload) => {
         shippingDetails: shippingWithDetails,
         isConfirmed: true,
       });
-
+      if (!order?.statusHistory) {
+        order.statusHistory = new Map();
+      }
+      order.statusHistory.set("Processing", new Date());
       await order.save({ session });
       completedOrders.push(order._id);
       successfullyCreatedItems.push(...orderData.items); // Track successfully created items

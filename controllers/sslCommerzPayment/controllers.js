@@ -58,7 +58,7 @@ exports.init = async (req, res, next) => {
     shipping_method: "NO",
     product_name: productNames,
     num_of_item: noOfItems,
-    product_category: productCats,
+    product_category: productCats || "General",
     product_profile: "general",
     cus_name: `${firstName} ${lastName}`,
     cus_email: email,
