@@ -58,7 +58,7 @@ const selectTemplate = (user, body, subject) => {
   }
 };
 
-const sendEmail = (user, subject, body) => {
+const sendEmail = async (user, subject, body) => {
   try {
     const transporter = setTransporter();
 

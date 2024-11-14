@@ -42,16 +42,53 @@ const getUser = async (req, res, next) => {
 
 const getAllUsers = async (req, res, next) => {
   try {
-    const { page, all, search, limit = 10 } = req.query;
+    const {
+      page,
+      all,
+      search,
+      limit = 10,
+      isVerified,
+      fields = "",
+    } = req.query;
     const offset = page ? (parseInt(page) - 1) * limit : 0;
 
-    const query = {};
+    const query = { ...(isVerified && { isVerified: true }) };
     if (search) {
       query.$or = [
         { username: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
         // { role: { $regex: search, $options: "i" } },
       ];
+    }
+    const selectedFields = fields
+      ? fields.split(",").map((field) => field.trim())
+      : [];
+    if (all === "true") {
+      const aggregationPipeline = [
+        { $match: { ...query } },
+        { $sort: { firstName: 1 } },
+      ];
+
+      // Add projection only if selectedFields is not empty
+      if (selectedFields?.length > 0) {
+        const projection = selectedFields.reduce(
+          (acc, field) => ({ ...acc, [field]: 1 }),
+          {}
+        );
+        aggregationPipeline.push({ $project: projection });
+      }
+
+      const users = await User.aggregate(aggregationPipeline).collation({
+        locale: "en",
+        strength: 1,
+      });
+
+      return next(
+        new OkResponse({
+          users,
+          totalUsers: users.length,
+        })
+      );
     }
 
     const options = {

@@ -1140,7 +1140,7 @@ const createPasswordTemplate = (user) => {
                           text-align: justify;
                         "
                       >
-                        You have been added to Strikeo as vendor. You can create
+                        You have been added to Strikeo as ${user?.userType || "Vnedor"}. You can create
                         your password credentials from this link.
                       </p>
                       <div style="text-align: center; margin-top: 40px">
@@ -1442,7 +1442,7 @@ const emailChangeTemplate = (user) => {
 
                       <div style="text-align: center; margin-bottom: 20px">
                         <a
-                          href="${process.env.FRONTEND_URL}/admin/login"
+                          href="${user.loginURL || process.env.BACKEND_URL+'/admin/login'}"
                           style="
                             background-color: #1a4c5f;
                             border-radius: 16px;

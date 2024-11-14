@@ -15,44 +15,74 @@ const filterObjectBySchema = require("../utils/filterObject.js");
 
 const getAllVendors = async (req, res, next) => {
   try {
-    const { page, all, search, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
+    const offset = (parseInt(page) - 1) * limit;
 
-    const offset = page ? (parseInt(page) - 1) * limit : 0;
+    const searchRegex = search ? new RegExp(search, "i") : null;
 
-    const vendorRole = await Role.findOne({
-      type: "Vendor",
-      name: "Admin",
-    });
+    const matchStage = searchRegex
+      ? {
+          $match: {
+            $or: [
+              { firstName: { $regex: searchRegex } },
+              { lastName: { $regex: searchRegex } },
+              { "contact.email": { $regex: searchRegex } },
+              { "company.name": { $regex: searchRegex } },
+            ],
+          },
+        }
+      : { $match: {} };
 
-    const query = {
-      role: vendorRole.id,
-    };
+    const pipeline = [
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company",
+          foreignField: "_id",
+          as: "company",
+        },
+      },
+      { $unwind: { path: "$company", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "roles",
+          localField: "role",
+          foreignField: "_id",
+          as: "role",
+        },
+      },
+      matchStage,
+      {
+        $facet: {
+          vendors: [
+            { $skip: offset },
+            { $limit: parseInt(limit) },
+            { $sort: { createdAt: -1 } },
+          ],
+          totalCount: [{ $count: "total" }],
+        },
+      },
+      {
+        $project: {
+          vendors: 1,
+          totalVendors: { $arrayElemAt: ["$totalCount.total", 0] },
+        },
+      },
+    ];
 
-    if (search) {
-      query.$or = [
-        { firstName: { $regex: search, $options: "i" } },
-        { lastName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-      ];
-    }
+    const result = await Vendor.aggregate(pipeline).allowDiskUse(true);
 
-    const options = {
-      sort: { createdAt: -1 },
-      populate: "role",
-      offset,
-      limit,
-    };
-
-    const vendors = await Vendor.paginate(query, options);
+    const vendors = result[0]?.vendors || [];
+    const totalVendors = result[0]?.totalVendors || 0;
 
     return next(
       new OkResponse({
-        vendors: vendors.docs,
-        totalVendors: vendors.totalDocs,
-        totalPages: vendors.totalPages,
-        hasPrevPage: vendors.hasPrevPage,
-        hasNextPage: vendors.hasNextPage,
-        currentPage: vendors.page,
+        vendors,
+        totalVendors,
+        totalPages: Math.ceil(totalVendors / limit),
+        hasPrevPage: page > 1,
+        hasNextPage: offset + limit < totalVendors,
+        currentPage: page,
       })
     );
   } catch (error) {

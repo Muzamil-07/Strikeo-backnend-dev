@@ -5,6 +5,14 @@ const auth = require("../../middleware/auth.js");
 const router = express.Router();
 
 router.post("/create-password", AgentController.createPassword);
+router.post("/login", AgentController.agentLogin);
+router.get("/verify", auth.verifyToken, AgentController.getAgent);
+router.get(
+  "/orders",
+  auth.verifyToken,
+  auth.isAdminOrAgent,
+  AgentController.getOrdersByAgentID
+);
 
 router.use(auth.verifyToken, auth.isAdminOrVendor);
 router.get("/", AgentController.getAllAgents);

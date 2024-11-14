@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 const mongoosePaginate = require("mongoose-paginate-v2");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { SECRET_KEY: secret } = process.env;
+
 const daysOfWeek = [
   "Monday",
   "Tuesday",
@@ -125,13 +129,17 @@ const AgentSchema = new mongoose.Schema(
 AgentSchema.plugin(uniqueValidator, { message: "is already taken." });
 AgentSchema.plugin(mongoosePaginate);
 
-// const autoPopulate = function (next) {
-//   this.populate("warehouse", "name location storage isActive");
-//   next();
-// };
+AgentSchema.statics.findByEmail = function (email) {
+  return this.findOne({ "contact.email": email });
+};
 
-// AgentSchema.pre("findOne", autoPopulate);
-// AgentSchema.pre("find", autoPopulate);
+AgentSchema.methods.setPassword = function () {
+  this.salt = bcrypt.genSaltSync();
+  this.hash = bcrypt.hashSync(this.hash, this.salt);
+};
+AgentSchema.methods.validPassword = function (password) {
+  return bcrypt.compareSync(password, this.hash);
+};
 // JWT generation
 AgentSchema.methods.generateJWT = function () {
   return jwt.sign(
@@ -168,8 +176,7 @@ AgentSchema.methods.toAuthJSON = function () {
     isVerified: this.isVerified,
     isActive: this.isActive,
     role: this.role,
-    // warehouse: this.warehouse, // Added to JSON response
-    deliveryRegions: this.deliveryRegions, // Added to JSON response
+    deliveryRegions: this.deliveryRegions,
     vehicle: this.vehicle,
     availability: this.availability,
     token: this.generateJWT(),
@@ -197,8 +204,7 @@ AgentSchema.methods.toJSON = function () {
     isVerified: this.isVerified,
     isActive: this.isActive,
     role: this.role,
-    // warehouse: this.warehouse, // Added to JSON response
-    deliveryRegions: this.deliveryRegions, // Added to JSON response
+    deliveryRegions: this.deliveryRegions,
     vehicle: this.vehicle,
     availability: this.availability,
   };

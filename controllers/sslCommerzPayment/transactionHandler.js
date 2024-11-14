@@ -272,6 +272,7 @@ const captureTransaction = async (data, ipn_Payload) => {
             link: `${process.env.FRONTEND_URL}/profile/orders`,
           },
         },
+        outro: `Transaction ID: ${payment.paymentId}`,
       },
       user?.email
     );
