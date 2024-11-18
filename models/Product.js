@@ -584,6 +584,7 @@ ProductSchema.plugin(AutoIncrement, {
 ProductSchema.plugin(uniqueValidator, { message: "is already taken." });
 ProductSchema.plugin(mongoosePaginate);
 // Creating an index for 'pricing.salePrice'
+ProductSchema.index({ "publishedAt": 1 });
 ProductSchema.index({ "pricing.salePrice": 1 });
 
 // Creating a multikey index for 'variants.pricing.salePrice'

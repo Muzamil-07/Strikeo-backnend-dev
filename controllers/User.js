@@ -104,6 +104,7 @@ const getAllUsers = async (req, res, next) => {
       users.docs.map(async (user) => {
         const ordersPlaced = await Order.countDocuments({
           customer: user._id,
+          isConfirmed: true,
         });
 
         return {
