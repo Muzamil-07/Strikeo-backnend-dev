@@ -42,10 +42,16 @@ CartSchema.plugin(uniqueValidator, { message: "is already taken." });
 const autoPopulate = function (next) {
   this.populate({
     path: "items.product",
-    populate: {
-      path: "company",
-      select: "name",
-    },
+    populate: [
+      {
+        path: "company",
+        select: "name",
+      },
+      {
+        path: "category",
+        select: "name",
+      },
+    ],
   });
   next();
 };
