@@ -7,6 +7,7 @@ const {
 } = require("./mailer");
 const { v4: uuidv4 } = require("uuid");
 const { getProductId, getNumber } = require("./stringsNymber");
+const groceryPricing = require("../imports/groceryPricing.json");
 const {
   getCities,
   getZonesInCity,
@@ -45,35 +46,54 @@ const getShippingCost = async (shippingDetails, items) => {
     );
   }
 
-  // Prepare the request body for price calculation
-  const selectedWeight = items?.reduce(
-    (acc, item) =>
-      acc +
-      getNumber(
-        item?.variantDetails
-          ? item?.variantDetails?.weight
-          : item?.product?.weight
-      ) *
-        getNumber(item?.quantity),
-    0
-  );
+  const pricing = groceryPricing.pricing;
+  let totalWeightForAPI = 0;
+  let groceryShippingCost = 0;
 
-  if (selectedWeight) {
+  for (const item of items) {
+    const weight = getNumber(
+      item?.variantDetails
+        ? item?.variantDetails?.weight
+        : item?.product?.weight
+    );
+    const quantity = getNumber(item?.quantity);
+    const itemWeight = weight * quantity;
+
+    if (itemWeight > 60) {
+      continue; // Exclude items exceeding 60kg from all calculations
+    }
+
+    if (item?.product?.category?.name === "Groceries and Food Items") {
+      // Grocery-specific logic
+      const range = pricing.find(
+        (range) => itemWeight >= range.min && itemWeight <= range.max
+      );
+      console.log("----------", range);
+      groceryShippingCost += getNumber(range?.price); // Accumulate grocery shipping cost
+    } else {
+      // Non-grocery items: Accumulate weight for API calculation
+      totalWeightForAPI += itemWeight;
+    }
+  }
+
+  // Calculate shipping cost for non-grocery items using the API
+  let nonGroceryShippingCost = 0;
+  if (totalWeightForAPI > 0) {
     const priceRequestBody = {
       store_id: 217213,
       item_type: 2,
       delivery_type: 48,
-      item_weight: selectedWeight,
+      item_weight: totalWeightForAPI,
       recipient_city: foundCity?.city_id,
       recipient_zone: foundZone?.zone_id,
     };
 
-    // Call the price calculation API
     const shippingCostResponse = await priceCalculation(priceRequestBody);
-    return shippingCostResponse?.data?.final_price;
-  } else {
-    return 0;
+    nonGroceryShippingCost = shippingCostResponse?.data?.final_price;
   }
+
+  // Return the combined shipping cost
+  return getNumber(groceryShippingCost) + getNumber(nonGroceryShippingCost);
 };
 
 const createSingleOrder = async (
