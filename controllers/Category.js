@@ -312,118 +312,114 @@ const createCategory = async (req, res, next) => {
 
 const updateCategoryById = async (req, res, next) => {
   try {
-    // Retrieves the category ID from request parameters for identification.
     const { id: categoryId } = req.params;
-    // Destructures the name, children hierarchy, and active status from the request body.
     const { name, children, isActive } = req.body;
 
-    // Attempts to find the existing category by its ID to ensure it exists before updating.
+    // Early exit if the category ID is invalid.
+    if (!isValidObjectId(categoryId)) {
+      return next(new BadRequestResponse('Invalid category ID'));
+    }
+
+    // Retrieve the category, handle the case if not found
     const category = await Category.findById(categoryId);
     if (!category) {
-      // If the category is not found, responds with an error message.
       return next(new BadRequestResponse('Category not found'));
     }
 
-    // Checks if the request intends to update the active status of the category and updates it if so.
-    if (isActive !== undefined) {
-      category.isActive = isActive; // Updates the category's active status.
-      await category.save(); // Saves the change to the database.
-      // Responds to the client upon successful update of the active status.
+    // Only update the active status if it's present in the request.
+    if (isActive !== undefined && category.isActive !== isActive) {
+      category.isActive = isActive;
+      await category.save();  // Save only if the status has changed.
       return next(new OkResponse('Category active status updated successfully!'));
     }
 
-    // Updates the category's name with the provided new name.
-    category.name = name;
+    // If name is provided, update it.
+    if (name && category.name !== name) {
+      category.name = name;
+    }
 
-    /**
-    * Defines a function to recursively handle the saving or updating of subcategories and their respective sub-subcategories.
-    * 
-    * @param {Array} children - The child categories to be saved.
-    * @param {mongoose.ObjectId} parentId - The ID of the parent category for subcategories, null for top-level categories.
-    * @param {mongoose.ObjectId} parentCategoryId - The ID of the top-level category, used for sub-subcategories.
-    * @returns {Promise<Array>} A promise that resolves to an array of IDs of the saved child categories.
-    */
+    // Process children (subcategories and sub-subcategories) in bulk.
     const saveOrUpdateChildren = async (children, parentId = categoryId, parentCategoryId = categoryId) => {
-      let savedChildrenIds = []; // Initializes an array to keep track of the saved children's IDs.
+      let childIds = [];
 
-      // Iterates over each child element (either a subcategory or a sub-subcategory) to process them.
+      // Loop through children and process them in batch.
       for (const child of children) {
-        let savedChildId = null; // Initializes a variable to store the saved child's ID.
+        if (!child.name || !child.type) continue; // Skip invalid children.
 
-        // Processes subcategories, either updating existing ones or creating new ones.
-        if (child.type === 'subcategory') {
-          let subCategory;
+        const { id, name, type } = child;
+        let childRecord = null;
 
-          // Determines whether to update an existing subcategory or create a new one based on the provided ID.
-          if (child.id && isValidObjectId(child.id)) {
-            subCategory = await SubCategory.findById(child.id); // Attempts to find an existing subcategory.
-            // If found, updates its name.
-            if (subCategory) subCategory.name = child.name;
-          } else {
-            // Creates a new subcategory with the specified name if no valid ID is provided.
-            subCategory = new SubCategory({ name: child.name });
-          }
-
-          // Saves the subcategory and records its ID.
-          await subCategory.save();
-          savedChildId = subCategory._id;
-
-          // Recursively processes any children (sub-subcategories) of the current subcategory, linking them accordingly.
-          const subSubCategoryIds = await saveOrUpdateChildren(child.children, savedChildId, parentId);
-          // Associates the processed sub-subcategories with their parent subcategory.
-          subCategory.subSubCategories = subSubCategoryIds;
-          // Saves the updated subcategory, now including references to its sub-subcategories.
-          await subCategory.save();
-        } else if (child.type === 'sub-subcategory') {
-          let subSubCategory;
-
-          // Determines whether to update an existing sub-subcategory or create a new one based on the provided ID.
-          if (child.id && isValidObjectId(child.id)) {
-            subSubCategory = await SubSubCategory.findById(child.id); // Attempts to find an existing sub-subcategory.
-            // If found, updates its name and parent references.
-            if (subSubCategory) {
-              subSubCategory.name = child.name;
-              subSubCategory.parentCategory = parentCategoryId;
-              subSubCategory.parentSubCategory = parentId;
-            }
-          } else {
-            // Creates a new sub-subcategory with the specified name and parent references if no valid ID is provided.
-            subSubCategory = new SubSubCategory({
-              name: child.name,
-              parentCategory: parentCategoryId,
-              parentSubCategory: parentId,
-            });
-          }
-
-          // Saves the sub-subcategory and records its ID.
-          await subSubCategory.save();
-          savedChildId = subSubCategory._id;
+        // Process subcategories.
+        if (type === 'subcategory') {
+          childRecord = await processSubCategory(child, parentId);
+        }
+        // Process sub-subcategories.
+        else if (type === 'sub-subcategory') {
+          childRecord = await processSubSubCategory(child, parentCategoryId, parentId);
         }
 
-        // Adds the IDs of saved or updated children to the tracking array.
-        if (savedChildId) {
-          savedChildrenIds.push(savedChildId);
+        if (childRecord) {
+          childIds.push(childRecord._id);
         }
       }
 
-      // Returns the array of saved or updated children's IDs.
-      return savedChildrenIds;
+      return childIds;
     };
 
-    // Initiates the process of updating or adding subcategories and sub-subcategories.
-    const updatedSubCategoryIds = await saveOrUpdateChildren(children);
+    // Process a subcategory, either create or update it.
+    const processSubCategory = async (child, parentId) => {
+      let subCategory = null;
+      const { id, name } = child;
+      if (id && isValidObjectId(id)) {
+        subCategory = await SubCategory.findById(id);
+        if (subCategory) subCategory.name = name;
+      } else {
+        subCategory = new SubCategory({ name });
+      }
+      await subCategory.save();
+      // Process sub-subcategories if any.
+      const subSubCategoryIds = await saveOrUpdateChildren(child.children, subCategory._id, parentId);
+      subCategory.subSubCategories = subSubCategoryIds;
+      await subCategory.save();
+      return subCategory;
+    };
 
-    // Updates the category with the new or updated list of subcategory IDs.
-    category.subCategories = updatedSubCategoryIds;
-    await category.save(); // Saves the updated category to the database.
+    // Process a sub-subcategory, either create or update it.
+    const processSubSubCategory = async (child, parentCategoryId, parentId) => {
+      let subSubCategory = null;
+      const { id, name } = child;
+      if (id && isValidObjectId(id)) {
+        subSubCategory = await SubSubCategory.findById(id);
+        if (subSubCategory) {
+          subSubCategory.name = name;
+          subSubCategory.parentCategory = parentCategoryId;
+          subSubCategory.parentSubCategory = parentId;
+        }
+      } else {
+        subSubCategory = new SubSubCategory({
+          name,
+          parentCategory: parentCategoryId,
+          parentSubCategory: parentId,
+        });
+      }
+      await subSubCategory.save();
+      return subSubCategory;
+    };
 
-    // Sends a response back to the client indicating the successful update of the category.
+    // Update or add new subcategories and sub-subcategories in bulk.
+    const updatedChildIds = await saveOrUpdateChildren(children);
+    category.subCategories = updatedChildIds;
+
+    await category.save(); // Save the category only once after all updates.
+
     return next(new OkResponse('Category updated successfully!'));
+
   } catch (error) {
     console.error('Error updating category:', error);
     return next(new BadRequestResponse('Failed to update category'));
   }
 };
+
 
 
 const deleteCategoryById = async (req, res, next) => {

@@ -9,6 +9,10 @@ exports.getNumber = (value = 0) => {
     ? parsedValue
     : 0;
 };
+exports.getMin0Number = (value = 0) => {
+  const parsedValue = parseFloat(value);
+  return !isNaN(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+};
 exports.getProductId = (product) => String(product?._id || product?.id || "");
 exports.getValidObjectId = (id = "") =>
   String(id).trim() && mongoose.isValidObjectId(id)

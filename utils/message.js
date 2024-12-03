@@ -1,4 +1,4 @@
-const { getNumber } = require("./stringsNymber");
+const { getMin0Number } = require("./stringsNymber");
 
 function createMessageBody(order, agent) {
   const company = order?.company || null;
@@ -25,7 +25,7 @@ function createMessageBody(order, agent) {
 
         const displayPrice = Math.max(
           0,
-          getNumber(
+          getMin0Number(
             item?.variantSnapshot
               ? item?.variantSnapshot?.pricing?.costPrice
               : item?.productSnapshot?.pricing?.costPrice
@@ -34,7 +34,7 @@ function createMessageBody(order, agent) {
 
         return `(${ind + 1}): ${
           item?.productSnapshot?.name || "Unnamed Product"
-        }, ${variantName} Size: ${size}, Color: ${color}, Price: ${displayPrice}, Quantity: ${getNumber(
+        }, ${variantName} Size: ${size}, Color: ${color}, Price: ${displayPrice}, Quantity: ${getMin0Number(
           item?.quantity || 0
         )}`;
       })

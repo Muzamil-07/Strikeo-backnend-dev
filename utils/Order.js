@@ -6,7 +6,7 @@ const {
   sslczNotification,
 } = require("./mailer");
 const { v4: uuidv4 } = require("uuid");
-const { getProductId, getNumber } = require("./stringsNymber");
+const { getProductId, getMin0Number } = require("./stringsNymber");
 const groceryPricing = require("../imports/groceryPricing.json");
 const {
   getCities,
@@ -51,12 +51,12 @@ const getShippingCost = async (shippingDetails, items) => {
   let groceryShippingCost = 0;
 
   for (const item of items) {
-    const weight = getNumber(
+    const weight = getMin0Number(
       item?.variantDetails
         ? item?.variantDetails?.weight
         : item?.product?.weight
     );
-    const quantity = getNumber(item?.quantity);
+    const quantity = Math.max(1, getMin0Number(item?.quantity));
     const itemWeight = weight * quantity;
 
     if (itemWeight > 60) {
@@ -68,8 +68,8 @@ const getShippingCost = async (shippingDetails, items) => {
       const range = pricing.find(
         (range) => itemWeight >= range.min && itemWeight <= range.max
       );
-      console.log("----------", range);
-      groceryShippingCost += getNumber(range?.price); // Accumulate grocery shipping cost
+
+      groceryShippingCost += getMin0Number(range?.price); // Accumulate grocery shipping cost
     } else {
       // Non-grocery items: Accumulate weight for API calculation
       totalWeightForAPI += itemWeight;
@@ -93,7 +93,9 @@ const getShippingCost = async (shippingDetails, items) => {
   }
 
   // Return the combined shipping cost
-  return getNumber(groceryShippingCost) + getNumber(nonGroceryShippingCost);
+  return (
+    getMin0Number(groceryShippingCost) + getMin0Number(nonGroceryShippingCost)
+  );
 };
 
 const createSingleOrder = async (
@@ -111,7 +113,7 @@ const createSingleOrder = async (
     shippingDetails.shippingCost = shippingCost;
 
     const customerBillWithShipping =
-      getNumber(orderData.totalAmount) + getNumber(shippingCost);
+      getMin0Number(orderData.totalAmount) + getMin0Number(shippingCost);
 
     const payment = new Payment({
       paymentId: `cod-${uuidv4()}`,
@@ -152,8 +154,8 @@ const createSingleOrder = async (
     confirmOrder(
       { ...user, confirm_token: order.confirm_token },
       {
-        items: orderData.items,
-        bill: orderData.totalAmount,
+        items: orderData?.items,
+        bill: orderData?.totalAmount,
         owner: userId,
       },
       user?.email,
@@ -297,7 +299,7 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
       notFoundCount++; // Track not found items
       continue; // Skip to next item (removing not found items)
     }
-    const quantity = getNumber(item.quantity);
+    const quantity = getMin0Number(item.quantity);
     let isValidItem = true; // Flag to check if item is valid
 
     // Check for variants
@@ -313,8 +315,8 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
         inactiveItems.push({
           name: `${product?.name} Variant: ${variant?.variantName}`,
           price: `${
-            getNumber(variant?.pricing?.salePrice) -
-            getNumber(variant?.pricing?.discount)
+            getMin0Number(variant?.pricing?.salePrice) -
+            getMin0Number(variant?.pricing?.discount)
           } X ${quantity}`,
         });
         isValidItem = false;
@@ -323,7 +325,7 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 
       // Check stock for variants
       if (variant?.inventory?.trackInventory) {
-        const variantStock = getNumber(variant?.inventory?.stock);
+        const variantStock = getMin0Number(variant?.inventory?.stock);
 
         if (quantity > variantStock || variantStock === 0) {
           if (variant?.inventory?.allowBackorders) {
@@ -335,8 +337,8 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
             removedItemsOutOfStock.push({
               name: `${product?.name} Variant: ${variant?.variantName}`,
               price: `${
-                getNumber(variant?.pricing?.salePrice) -
-                getNumber(variant?.pricing?.discount)
+                getMin0Number(variant?.pricing?.salePrice) -
+                getMin0Number(variant?.pricing?.discount)
               } X ${quantity}`,
             });
             console.info(
@@ -353,8 +355,8 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
             name: `${product?.name} Variant: ${variant?.variantName}`,
             price: `${Math.max(
               0,
-              getNumber(variant?.pricing?.salePrice) -
-                getNumber(variant?.pricing?.discount)
+              getMin0Number(variant?.pricing?.salePrice) -
+                getMin0Number(variant?.pricing?.discount)
             )} X ${quantity}`,
           });
           isValidItem = false; // Mark item as invalid
@@ -372,11 +374,10 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
       if (!product?.isActive) {
         inactiveItems.push({
           name: product?.name,
-          price: `${Math.max(
-            0,
-            getNumber(product?.pricing?.salePrice) -
-              getNumber(product?.pricing?.discount)
-          )} X ${quantity}`,
+          price: `${
+            getMin0Number(product?.pricing?.salePrice) -
+            getMin0Number(product?.pricing?.discount)
+          } X ${quantity}`,
         });
         isValidItem = false;
         continue;
@@ -384,7 +385,7 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 
       // Check stock for the product if no variant
       if (product?.inventory?.trackInventory) {
-        const productStock = getNumber(product?.inventory?.stock);
+        const productStock = getMin0Number(product?.inventory?.stock);
 
         if (quantity > productStock || productStock === 0) {
           if (product?.inventory?.allowBackorders) {
@@ -397,8 +398,8 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
               name: product?.name,
               price: `${Math.max(
                 0,
-                getNumber(product?.pricing?.salePrice) -
-                  getNumber(product?.pricing?.discount)
+                getMin0Number(product?.pricing?.salePrice) -
+                  getMin0Number(product?.pricing?.discount)
               )} X ${quantity}`,
             });
             console.info(`Product with SKU => ${product?.sku} is out of stock`);
@@ -412,8 +413,8 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
             name: product?.name,
             price: `${Math.max(
               0,
-              getNumber(product?.pricing?.salePrice) -
-                getNumber(product?.pricing?.discount)
+              getMin0Number(product?.pricing?.salePrice) -
+                getMin0Number(product?.pricing?.discount)
             )} X ${quantity}`,
           });
           isValidItem = false; // Mark item as invalid
@@ -467,19 +468,19 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 
       let totalAmount = 0;
       let vendorAmount = 0;
-      const quantity = getNumber(item?.quantity);
+      const quantity = Math.max(1, getMin0Number(item?.quantity));
       if (item?.variantDetails) {
         totalAmount =
-          getNumber(item?.variantDetails?.pricing?.salePrice) -
-          getNumber(item?.variantDetails?.pricing?.discount);
+          getMin0Number(item?.variantDetails?.pricing?.salePrice) -
+          getMin0Number(item?.variantDetails?.pricing?.discount);
 
-        vendorAmount = getNumber(item?.variantDetails?.pricing?.costPrice);
+        vendorAmount = getMin0Number(item?.variantDetails?.pricing?.costPrice);
       } else {
         totalAmount =
-          getNumber(item?.product?.pricing?.salePrice) -
-          getNumber(item?.product?.pricing?.discount);
+          getMin0Number(item?.product?.pricing?.salePrice) -
+          getMin0Number(item?.product?.pricing?.discount);
 
-        vendorAmount = getNumber(item?.product?.pricing?.costPrice);
+        vendorAmount = getMin0Number(item?.product?.pricing?.costPrice);
       }
       totalAmount = totalAmount * quantity;
       vendorAmount = vendorAmount * quantity;

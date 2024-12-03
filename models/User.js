@@ -76,6 +76,9 @@ const UserSchema = new mongoose.Schema(
         ref: "Billing",
       },
     ],
+    promotions: {
+      promoCodes: [{ type: mongoose.Schema.Types.ObjectId, ref: "PromoCode" }],
+    },
     reset_token: {
       type: {
         token: String,
@@ -171,7 +174,7 @@ UserSchema.methods.toAuthJSON = function () {
     country: this.country,
     isActive: this.isActive,
     isVerified: this.isVerified,
-    cart: this.cart ? this.cart.toObject() : this.cart,
+    cart: this.cart,
     favouriteProducts: this.favouriteProducts
       ? this.favouriteProducts.toObject()
       : this.favouriteProducts,

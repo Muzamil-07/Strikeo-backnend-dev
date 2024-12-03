@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 const mongoosePaginate = require("mongoose-paginate-v2");
-const { getNumber } = require("../utils/stringsNymber");
+const { getMin0Number } = require("../utils/stringsNymber");
 const Product = require("./Product");
 const AutoIncrement = require("mongoose-sequence")(mongoose);
 
@@ -490,7 +490,7 @@ OrderSchema.pre("save", async function (next) {
       }
 
       let variant = null;
-      const quantity = getNumber(item.quantity);
+      const quantity = Math.max(1, getMin0Number(item.quantity));
 
       if (item?.variantSKU) {
         variant = product?.variants.find((v) => v?.sku === item?.variantSKU);
@@ -502,7 +502,7 @@ OrderSchema.pre("save", async function (next) {
         }
 
         if (variant?.inventory?.trackInventory) {
-          const variantStock = getNumber(variant?.inventory?.stock);
+          const variantStock = getMin0Number(variant?.inventory?.stock);
 
           if (quantity > variantStock || variantStock === 0) {
             if (variant?.inventory?.allowBackorders) {
@@ -544,7 +544,7 @@ OrderSchema.pre("save", async function (next) {
         item.variantSnapshot = null;
 
         if (product?.inventory?.trackInventory) {
-          const productStock = getNumber(product?.inventory?.stock);
+          const productStock = getMin0Number(product?.inventory?.stock);
 
           if (quantity > productStock || productStock === 0) {
             if (product?.inventory?.allowBackorders) {

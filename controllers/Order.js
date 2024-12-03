@@ -11,7 +11,7 @@ const { default: mongoose } = require("mongoose");
 const Agent = require("../models/Agent.js");
 const { createMessageBody } = require("../utils/message.js");
 
-const { getProductId, getNumber } = require("../utils/stringsNymber.js");
+const { getProductId } = require("../utils/stringsNymber.js");
 const { createSingleOrder, groupItemsByCompany } = require("../utils/Order.js");
 const { cartFormatForSelectedItems } = require("../utils/Cart.js");
 const {
@@ -465,101 +465,99 @@ const createOrder = async (req, res, next) => {
 };
 
 const confirmUserOrder = async (req, res, next) => {
-  const { user: id, token, order: orderId } = { ...req.query };
+  const { user: userId, token, order: orderId } = req.query;
 
-  if (!id || !token || !orderId) {
+  if (!userId || !token || !orderId) {
     console.log("Check failed: Missing required query params.");
     return res.redirect(
-      `${process.env.FRONTEND_URL}/checkout/order?success=false`
+      `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Required+parameters+are+missing.`
     );
   }
 
   try {
-    const user = await User.findById(id);
-    const order = await Order.findOne({ _id: orderId, customer: id });
-    ///Vendor Data
-    const { firstName, lastName, contact } = await Vendor.findOne({
-      company: order.company,
-    });
-    const { email } = contact;
+    // Fetch user and order details in parallel
+    const [user, order] = await Promise.all([
+      User.findById(userId).lean(),
+      Order.findOne({ _id: orderId, customer: userId }).lean(),
+    ]);
 
-    //Customer Data
-    const {
-      firstName: customerFirstName,
-      lastName: customerLastName,
-      email: customerEmail,
-    } = user;
-
-    if (!user || !order) {
-      console.log("Check failed: User or order not found.");
+    if (!user) {
+      console.log("Check failed: User not found.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Customer+not+found.`
       );
     }
 
-    if (order?.confirm_token?.token !== token) {
+    if (!order) {
+      console.log("Check failed: Order not found.");
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Order+details+not+found.`
+      );
+    }
+
+    if (order.confirm_token?.token !== token) {
       console.log("Check failed: Token mismatch.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Invalid+confirmation+token.`
       );
     }
 
-    if (order?.confirm_token?.expires < Date.now()) {
+    if (order.confirm_token?.expires < Date.now()) {
       console.log("Check failed: Token expired.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=The+confirmation+link+has+expired.`
       );
     }
 
-    if (!order.statusHistory) {
-      order.statusHistory = new Map();
+    // Fetch vendor data
+    const vendor = await Vendor.findOne({ company: order.company }).lean();
+    if (!vendor) {
+      console.log("Check failed: Vendor not found.");
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Vendor+details+not+found.`
+      );
     }
-    order.statusHistory.set("Processing", new Date());
-    order.confirm_token = null;
-    order.isConfirmed = true;
 
-    await order.save({ validateModifiedOnly: true });
-    await user.save();
+    const {
+      firstName: vendorFirstName,
+      lastName: vendorLastName,
+      contact,
+    } = vendor;
+    const vendorEmail = contact?.email;
 
+    // Update order details
+    const orderUpdate = {
+      $set: {
+        confirm_token: null,
+        isConfirmed: true,
+      },
+    };
+
+    await Order.updateOne({ _id: orderId }, orderUpdate);
+
+    // Send notifications
     const { orderNumber, items, vendorBill, shippingDetails, customerBill } =
       order;
 
-    ///Email send to vendor after customer is confirmed the order
+    // Send email to vendor
     await vendorUserOrderNotification(
       orderNumber,
       items,
-      email,
+      vendorEmail,
       vendorBill,
       shippingDetails
     );
 
-    ///Send the order notification to Strikeo Admin Email Address
-    //After user's confirmation
-    const orderInfo = {
-      customerName: `${customerFirstName} ${customerLastName}`,
-      customerEmail,
-      customerBill,
-      shippingDetails: shippingDetails,
-      //Vendor Info
-      vendorName: `${firstName} ${lastName}`,
-      vendorEmail: email,
-      orderNumber,
-      vendorBill,
-      items,
-      status: "Confirmed", //Only for message sending conditionally, never effect on any data
-    };
-    await orderAdminNotification(orderInfo);
-
-    const shippingCostWithCustomerBill =
-      customerBill + order?.shippingDetails.shippingCost;
+    // Calculate total bill
+    const totalBill = customerBill + (shippingDetails?.shippingCost || 0);
 
     return res.redirect(
-      `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${order?.orderNumber}&bill=${shippingCostWithCustomerBill}`
+      `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${orderNumber}&bill=${totalBill}`
     );
   } catch (error) {
-    console.log("While confirming order => ", error);
+    console.error("Error while confirming order:", error);
     return res.redirect(
-      `${process.env.FRONTEND_URL}/checkout/order?success=false`
+      `${process.env.FRONTEND_URL}/checkout/order?success=false&message=An+unexpected+error+occurred.+Please+try+again+later.`
     );
   }
 };
@@ -716,7 +714,7 @@ const updateOrder = async (req, res, next) => {
 
     ///Send the order notification to Strikeo Admin Email Address
     //If vendor changed order status
-    if (roleType === "Vendor") {
+    if (roleType === "Vendor" && status === "Delivered") {
       const orderInfo = {
         customerName: `${customerFirstName} ${customerLastName}`,
         customerEmail,

@@ -560,9 +560,7 @@ const googleAuth = async (req, res, next) => {
       newUser.cart = cart._id;
       newUser.favouriteProducts = favourite;
       await newUser.save();
-      await newUser.populate(
-        "role cart activeBillingAddress billingAddresses favouriteProducts"
-      );
+
       const responseHTML = htmlPage.replace(
         "%value%",
         JSON.stringify({ user: newUser.toAuthJSON(), signup: true })
@@ -706,9 +704,7 @@ const facebookAuth = async (req, res, next) => {
       newUser.cart = cart._id;
       newUser.favouriteProducts = favourite;
       await newUser.save();
-      await newUser.populate(
-        "role cart activeBillingAddress billingAddresses favouriteProducts"
-      );
+
       const responseHTML = htmlPage.replace(
         "%value%",
         JSON.stringify({ user: newUser.toAuthJSON(), signup: true })

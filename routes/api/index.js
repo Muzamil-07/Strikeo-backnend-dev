@@ -16,6 +16,8 @@ const ReviewRoute = require("./Review.js");
 const ShippingRoute = require("./Shipping.js");
 const ChatBotRoute = require("./ChatBot.js");
 const WareHouseRoute = require("./Warehouse.js");
+const PromoCodeRoute = require("./PromoCode.js");
+const DiscountEvent = require("./DiscountEvents.js");
 
 const router = express.Router();
 
@@ -36,5 +38,7 @@ router.use("/reviews", ReviewRoute);
 router.use("/shipping", ShippingRoute);
 router.use("/chatbot", ChatBotRoute);
 router.use("/warehouse", WareHouseRoute);
+router.use("/promoCode", PromoCodeRoute);
+router.use("/discountEvent", DiscountEvent);
 
 module.exports = router;

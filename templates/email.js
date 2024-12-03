@@ -1,3 +1,5 @@
+const { getMin0Number } = require("../utils/stringsNymber");
+
 const emailTemplateLogo = `<table cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td align="left" style="width: 100%; padding: 20px 0 5px">
@@ -1140,7 +1142,9 @@ const createPasswordTemplate = (user) => {
                           text-align: justify;
                         "
                       >
-                        You have been added to Strikeo as ${user?.userType || "Vnedor"}. You can create
+                        You have been added to Strikeo as ${
+                          user?.userType || "Vnedor"
+                        }. You can create
                         your password credentials from this link.
                       </p>
                       <div style="text-align: center; margin-top: 40px">
@@ -1442,7 +1446,10 @@ const emailChangeTemplate = (user) => {
 
                       <div style="text-align: center; margin-bottom: 20px">
                         <a
-                          href="${user.loginURL || process.env.BACKEND_URL+'/admin/login'}"
+                          href="${
+                            user.loginURL ||
+                            process.env.BACKEND_URL + "/admin/login"
+                          }"
                           style="
                             background-color: #1a4c5f;
                             border-radius: 16px;
@@ -1477,7 +1484,7 @@ const emailChangeTemplate = (user) => {
 };
 const orderConfirmTemplate = (data, user, bill, shippingCost) => {
   const totalDiscount = data.reduce(
-    (sum, item) => sum + (item.discount || 0),
+    (sum, item) => sum + getMin0Number(item.discount),
     0
   );
   return `<!DOCTYPE html>
@@ -1572,9 +1579,9 @@ const orderConfirmTemplate = (data, user, bill, shippingCost) => {
                           text-align: justify;
                         "
                       >
-                        You recently placed an order of TK. ${
-                          bill + shippingCost
-                        } on Strikeo for
+                        You recently placed an order of TK. ${(
+                          getMin0Number(bill) + getMin0Number(shippingCost)
+                        ).toLocaleString()} on Strikeo for
                         the following items:
                       </p>
 
@@ -1643,7 +1650,7 @@ const orderConfirmTemplate = (data, user, bill, shippingCost) => {
                                   text-align: center;
                                 "
                               >
-                                ${row.quantity}
+                                ${row?.quantity}
                               </td>
                               <td
                                 style="
@@ -1651,7 +1658,7 @@ const orderConfirmTemplate = (data, user, bill, shippingCost) => {
                                   text-align: right;
                                 "
                               >
-                                ${row.price}
+                                ${row?.price}
                               </td>
                               <td
                                 style="
@@ -1659,7 +1666,7 @@ const orderConfirmTemplate = (data, user, bill, shippingCost) => {
                                   text-align: right;
                                 "
                               >
-                                ${row.totalPrice}
+                                ${row?.totalPrice}
                               </td>
                              
                             </tr>
@@ -1668,21 +1675,28 @@ const orderConfirmTemplate = (data, user, bill, shippingCost) => {
                             .join("")}
                            <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Discount(-)</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${totalDiscount}</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${getMin0Number(
+                                totalDiscount
+                              ).toLocaleString()}</td>
                             </tr>
                             <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Sub Total</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${bill}</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${getMin0Number(
+                                bill
+                              ).toLocaleString()}</td>
                             </tr>
                             <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Delivery Charge</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${shippingCost}</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${getMin0Number(
+                                shippingCost
+                              ).toLocaleString()}</td>
                             </tr>
                             <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${
-                                bill + shippingCost
-                              }</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${(
+                                getMin0Number(bill) +
+                                getMin0Number(shippingCost)
+                              ).toLocaleString()}</td>
                             </tr>
                         </tbody>
                       </table>
@@ -1733,16 +1747,7 @@ const orderConfirmTemplate = (data, user, bill, shippingCost) => {
   </body>
 </html>`;
 };
-const customerOrderPlaceNotificationVendorTemplate = (
-  data,
-  bill,
-  shippingDetails,
-  orderNo
-) => {
-  // const totalDiscount = data.reduce(
-  //   (sum, item) => sum + (item.discount || 0),
-  //   0
-  // );
+const customerOrderPlaceNotificationVendorTemplate = (data, bill, orderNo) => {
   return `<!DOCTYPE html>
 <html
   lang="en"
@@ -1921,7 +1926,7 @@ const customerOrderPlaceNotificationVendorTemplate = (
                                 text-align: right;
                               "
                             >
-                             TK. ${bill}
+                             TK. ${getMin0Number(bill).toLocaleString()}
                             </td>
                           </tr>
                         </tbody>
@@ -1930,93 +1935,21 @@ const customerOrderPlaceNotificationVendorTemplate = (
                     </div>
                   </td>
                 </tr>
-                <tr>
-                  <td colspan="3">
-                    <div style="border-radius: 24px; padding: 0px 30px">
-                      <table width="100%" cellpadding="20" cellspacing="0">
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-top: 1px solid #ddd;
-                              text-align: left;
-                            "
-                          >
-                            Shipping Details :
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Name :
-                            </span>
-                            ${shippingDetails.firstName}
-                            ${shippingDetails.lastName}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Phone :
-                            </span>
-                            ${shippingDetails.phone}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Address :
-                            </span>
-                            ${shippingDetails.address}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              City :
-                            </span>
-                            ${shippingDetails.city}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              text-align: left;
-                              font-size: 12px;
-                            "
-                          >
-                            <span style="font-weight: bold; padding-right: 4px">
-                              Country :
-                            </span>
-                            ${shippingDetails.country}
-                          </td>
-                        </tr>
-                      </table>
+                 <tr>
+                  <td>
+                    <div style="text-align: center; margin: 40px 0px 40px">
+                      <a
+                        href="https://portal.strikeo.com/vendor/orders"
+                        style="
+                          background-color: #118aa9;
+                          border-radius: 16px;
+                          text-decoration: none;
+                          padding: 14px 30px;
+                          color: white;
+                        "
+                      >
+                        View Orders
+                      </a>
                     </div>
                   </td>
                 </tr>
@@ -2378,10 +2311,10 @@ const orderUpdateStatusForCustomTemplate = (
   shippingDetails
 ) => {
   const totalDiscount = data.reduce(
-    (sum, item) => sum + (item.discount || 0),
+    (sum, item) => sum + getMin0Number(item?.discount),
     0
   );
-  const shippingCost = shippingDetails.shippingCost || 0;
+  const shippingCost = getMin0Number(shippingDetails?.shippingCost);
   const orderStatusMessage = (status) => {
     switch (status) {
       case "Pending":
@@ -2585,21 +2518,28 @@ const orderUpdateStatusForCustomTemplate = (
                             .join("")}
                             <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Discount(-)</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${totalDiscount}</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${getMin0Number(
+                                totalDiscount
+                              ).toLocaleString()}</td>
                             </tr>
                             <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Sub Total</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${bill}</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${getMin0Number(
+                                bill
+                              ).toLocaleString()}</td>
                             </tr>
                             <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Delivery Charge</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${shippingCost}</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${getMin0Number(
+                                shippingCost
+                              ).toLocaleString()}</td>
                             </tr>
                             <tr>
                               <td colspan="3" style="padding: 10px; text-align: right; ">Total</td>
-                              <td style="padding: 10px; text-align: right; ">Tk. ${
-                                bill + shippingCost
-                              }</td>
+                              <td style="padding: 10px; text-align: right; ">Tk. ${(
+                                getMin0Number(bill) +
+                                getMin0Number(shippingCost)
+                              ).toLocaleString()}</td>
                             </tr>
                         </tbody>
                       </table>
@@ -2879,7 +2819,7 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
     status,
   } = info;
   const totalDiscount = customerOrders.reduce(
-    (sum, item) => sum + (item.discount || 0),
+    (sum, item) => sum + getMin0Number(item?.discount),
     0
   );
   const shippingCost = shippingDetails?.shippingCost || 0;
@@ -3074,7 +3014,9 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
                               Discount(-)
                             </td>
                             <td style="padding: 10px; text-align: right">
-                              Tk. ${totalDiscount}
+                              Tk. ${getMin0Number(
+                                totalDiscount
+                              ).toLocaleString()}
                             </td>
                           </tr>
                           <tr>
@@ -3085,7 +3027,9 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
                              Sub Total
                             </td>
                             <td style="padding: 10px; text-align: right">
-                              Tk. ${customerBill}
+                              Tk. ${getMin0Number(
+                                customerBill
+                              ).toLocaleString()}
                             </td>
                           </tr>
                           <tr>
@@ -3096,7 +3040,9 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
                               Delivery Charge
                             </td>
                             <td style="padding: 10px; text-align: right">
-                              Tk. ${shippingCost}
+                              Tk. ${getMin0Number(
+                                shippingCost
+                              ).toLocaleString()}
                             </td>
                           </tr>
                           <tr>
@@ -3107,7 +3053,10 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
                               Total
                             </td>
                             <td style="padding: 10px; text-align: right">
-                              Tk. ${shippingCost + customerBill}
+                              Tk. ${(
+                                getMin0Number(shippingCost) +
+                                getMin0Number(customerBill)
+                              ).toLocaleString()}
                             </td>
                           </tr>
                         </tbody>
@@ -3302,7 +3251,7 @@ const orderAdminOrderEmailTemplate = (info, customerOrders, vendorOrders) => {
                               Total
                             </td>
                             <td style="padding: 10px; text-align: right">
-                              Tk. ${vendorBill}
+                              Tk. ${getMin0Number(vendorBill).toLocaleString()}
                             </td>
                           </tr>
                         </tbody>

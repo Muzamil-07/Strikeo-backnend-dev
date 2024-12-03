@@ -1,6 +1,6 @@
 const { OkResponse, BadRequestResponse } = require("express-http-response");
 const Cart = require("../models/Cart.js");
-const { getNumber } = require("../utils/stringsNymber.js");
+const { getMin0Number } = require("../utils/stringsNymber.js");
 const {
   processIncomingProducts,
   calculateTotalBill,
@@ -32,7 +32,7 @@ const addToCart = async (req, res, next) => {
     // Input validations
     if (!productId)
       return next(new BadRequestResponse("Product ID is required"));
-    if (!getNumber(quantity) || getNumber(quantity) < 1)
+    if (!getMin0Number(quantity) || getMin0Number(quantity) < 1)
       return next(new BadRequestResponse("Quantity must be greater than 0"));
 
     // Fetch the cart for the logged-in user
@@ -43,7 +43,7 @@ const addToCart = async (req, res, next) => {
 
     // Clone items from the cart for manipulation
     const tempItems = JSON.parse(JSON.stringify(cart.items));
-
+    console.log(tempItems);
     // Process incoming products and update tempItems
     const { updatedItems, missedProductIds } = await processIncomingProducts(
       [{ productId, variantSKU, quantity }],
@@ -57,7 +57,15 @@ const addToCart = async (req, res, next) => {
 
     // Save the updated cart
     await cart.save();
-    await cart.populate("items.product");
+    await cart.populate([
+      {
+        path: "items.product",
+        populate: [
+          { path: "category", selecte: "name" },
+          { path: "company", select: "name" },
+        ],
+      },
+    ]);
 
     return next(new OkResponse({ cart, missedProductIds }));
   } catch (error) {
@@ -102,7 +110,15 @@ const addToCartInBulk = async (req, res, next) => {
 
     // Save the updated cart
     await cart.save();
-    await cart.populate("items.product");
+    await cart.populate([
+      {
+        path: "items.product",
+        populate: [
+          { path: "category", selecte: "name" },
+          { path: "company", select: "name" },
+        ],
+      },
+    ]);
 
     return next(new OkResponse({ cart, missedProductIds }));
   } catch (error) {
@@ -128,7 +144,15 @@ const updateCart = async (req, res, next) => {
 
     cart.items = items;
     await cart.save();
-    await cart.populate("items.product");
+    await cart.populate([
+      {
+        path: "items.product",
+        populate: [
+          { path: "category", selecte: "name" },
+          { path: "company", select: "name" },
+        ],
+      },
+    ]);
     if (bill) cart.bill = await calculateTotalBill(cart.items);
 
     await cart.save();
@@ -147,7 +171,7 @@ const updateItemQuantity = async (req, res, next) => {
   try {
     if (!productId)
       return next(new BadRequestResponse("Product ID is required"));
-    if (!getNumber(quantity))
+    if (!getMin0Number(quantity))
       return next(new BadRequestResponse("Quantity is required"));
 
     const cart = await Cart.findOne({ owner: req.user.id });
@@ -180,12 +204,12 @@ const updateItemQuantity = async (req, res, next) => {
 
     // Update the quantity based on the flag
     if (flag === "+") {
-      tempItems[itemIndex].quantity += getNumber(quantity);
+      tempItems[itemIndex].quantity += getMin0Number(quantity);
     } else if (flag === "-") {
       // Subtract quantity but ensure it doesn't go below 1
       tempItems[itemIndex].quantity = Math.max(
         1,
-        tempItems[itemIndex].quantity - getNumber(quantity)
+        tempItems[itemIndex].quantity - getMin0Number(quantity)
       );
     }
 

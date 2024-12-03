@@ -12,7 +12,7 @@ const { default: mongoose } = require("mongoose");
 const { slugify } = require("slugify-unicode");
 const Brand = require("../models/Brand.js");
 const filterObjectBySchema = require("../utils/filterObject.js");
-const { getNumber, getProductId } = require("../utils/stringsNymber.js");
+const { getProductId, getMin0Number } = require("../utils/stringsNymber.js");
 
 const getPublicProducts = async (req, res, next) => {
   try {
@@ -56,8 +56,8 @@ const getPublicProducts = async (req, res, next) => {
 
     // Handle price range filtering
     if (minPrice || maxPrice) {
-      const sanitizedMinPrice = minPrice ? Math.max(0, getNumber(minPrice)) : 0;
-      const sanitizedMaxPrice = maxPrice ? Math.max(0, getNumber(maxPrice)) : Number.MAX_SAFE_INTEGER;
+      const sanitizedMinPrice = getMin0Number(minPrice);
+      const sanitizedMaxPrice = getMin0Number(maxPrice)
 
       query.$or = [
         { "variants.pricing.salePrice": { $gte: sanitizedMinPrice, $lte: sanitizedMaxPrice } },

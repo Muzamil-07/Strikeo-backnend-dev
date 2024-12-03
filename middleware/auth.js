@@ -35,7 +35,7 @@ const verifyToken = function (req, res, next) {
       }
     });
   } else {
-    next(new BadRequestResponse("Token not found!"));
+    next(new BadRequestResponse("Authorization required!"));
   }
 };
 
@@ -69,7 +69,7 @@ const isAgent = function (req, res, next) {
   }
 };
 const isUser = function (req, res, next) {
-  if (req.user.role?.type === "User") {
+  if (req?.user?.role?.type === "User") {
     next();
   } else {
     return next(

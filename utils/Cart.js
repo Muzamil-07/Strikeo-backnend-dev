@@ -1,12 +1,14 @@
 const Product = require("../models/Product");
-const { getNumber, getProductId } = require("./stringsNymber");
+const { getProductId, getMin0Number } = require("./stringsNymber");
 
 const checkStockStatus = (productInfo) => {
   const { inventory } = productInfo || {};
   if (!inventory) return false;
 
   if (inventory?.trackInventory) {
-    return inventory?.allowBackorders ? true : getNumber(inventory?.stock) > 0;
+    return inventory?.allowBackorders
+      ? true
+      : getMin0Number(inventory?.stock) > 0;
   }
 
   return !!inventory?.inStock;
@@ -19,19 +21,19 @@ const cartFormatForSelectedItems = async (payload, shippingPrice = 0) => {
     ) || [];
 
   const selectedQty = selectedItems?.reduce(
-    (acc, item) => acc + getNumber(item?.quantity),
+    (acc, item) => acc + getMin0Number(item?.quantity),
     0
   );
 
   const selectedWeight = selectedItems?.reduce(
     (acc, item) =>
       acc +
-      getNumber(
+      getMin0Number(
         item?.variantDetails
           ? item?.variantDetails?.weight
           : item?.product?.weight
       ) *
-        getNumber(item?.quantity),
+        getMin0Number(item?.quantity),
     0
   );
 
@@ -41,10 +43,10 @@ const cartFormatForSelectedItems = async (payload, shippingPrice = 0) => {
     selectedItems?.reduce(
       (acc, item) =>
         acc +
-        getNumber(
+        getMin0Number(
           (item?.variantDetails
             ? item?.variantDetails?.pricing?.discount
-            : item?.product?.pricing?.discount) * item?.quantity
+            : item?.product?.pricing?.discount) * getMin0Number(item?.quantity)
         ),
       0
     )
@@ -55,16 +57,16 @@ const cartFormatForSelectedItems = async (payload, shippingPrice = 0) => {
     selectedItems?.reduce(
       (acc, item) =>
         acc +
-        getNumber(
+        getMin0Number(
           (item?.variantDetails
             ? item?.variantDetails?.pricing?.salePrice
-            : item?.product?.pricing?.salePrice) * item?.quantity
+            : item?.product?.pricing?.salePrice) * getMin0Number(item?.quantity)
         ),
       0
     )
   );
 
-  const shippingCost = Math.max(0, getNumber(shippingPrice));
+  const shippingCost = getMin0Number(shippingPrice);
 
   const selectedPayableAmount = Math.max(
     0,
@@ -113,14 +115,14 @@ const calculateTotalBill = async (tempItems) => {
       );
       if (variant) {
         itemPrice =
-          getNumber(variant?.pricing?.salePrice) -
-          getNumber(variant?.pricing?.discount);
+          getMin0Number(variant?.pricing?.salePrice) -
+          getMin0Number(variant?.pricing?.discount);
       }
     } else {
       // Use the product's main price if no variant is selected
       itemPrice =
-        getNumber(product?.pricing?.salePrice) -
-        getNumber(product?.pricing?.discount);
+        getMin0Number(product?.pricing?.salePrice) -
+        getMin0Number(product?.pricing?.discount);
     }
 
     return total + itemPrice * item.quantity;
@@ -150,7 +152,7 @@ const processIncomingProducts = async (products = [], tempItems = []) => {
 
     if (existingItemIndex !== -1) {
       // If the product exists, update the quantity
-      tempItems[existingItemIndex].quantity += getNumber(quantity) || 1;
+      tempItems[existingItemIndex].quantity += getMin0Number(quantity) || 1;
     } else {
       try {
         // Fetch the product asynchronously
@@ -172,7 +174,7 @@ const processIncomingProducts = async (products = [], tempItems = []) => {
         const newItem = {
           product: product,
           variantSKU: variantSKU || null,
-          quantity: getNumber(quantity) || 1,
+          quantity: getMin0Number(quantity) || 1,
           selected: true,
         };
         tempItems.push(newItem);
