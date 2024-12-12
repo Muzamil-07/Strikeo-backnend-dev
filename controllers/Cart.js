@@ -43,7 +43,7 @@ const addToCart = async (req, res, next) => {
 
     // Clone items from the cart for manipulation
     const tempItems = JSON.parse(JSON.stringify(cart.items));
-    console.log(tempItems);
+    
     // Process incoming products and update tempItems
     const { updatedItems, missedProductIds } = await processIncomingProducts(
       [{ productId, variantSKU, quantity }],

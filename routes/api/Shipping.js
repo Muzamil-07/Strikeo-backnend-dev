@@ -1,37 +1,78 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const ShippingController = require('../../controllers/Shipping');
+const ShippingController = require("../../controllers/Shipping");
+const auth = require("../../middleware/auth");
 
 // Issue an Access Token
-router.post('/issue-token', ShippingController.issueAccessToken);
-``
+router.post(
+  "/issue-token",
+  auth.verifyToken,
+  auth.isAdmin,
+  ShippingController.issueAccessToken
+);
+``;
 // Issue a Refresh Token
-router.post('/refresh-token', ShippingController.issueRefreshToken);
+router.post(
+  "/refresh-token",
+  auth.verifyToken,
+  auth.isAdmin,
+  ShippingController.issueRefreshToken
+);
 
 // Create a New Store
-router.post('/stores', ShippingController.createStore);
+router.post(
+  "/stores",
+  auth.verifyToken,
+  auth.isAdmin,
+  ShippingController.createStore
+);
 
 // Get Stores
 // router.get('/stores', getStores);
 // Create a New Order
-router.post('/orders', ShippingController.createOrder);
+router.post(
+  "/orders",
+  auth.verifyToken,
+  auth.isOptional,
+  ShippingController.createOrder
+);
 
 // // Create Bulk Orders
 // router.post('/orders/bulk', createBulkOrder);
 
 // // Get Order Short Info
 // router.get('/orders/:consignmentId/info', getOrderInfo);
-``
+``;
 // Get Cities
-router.get('/cities', ShippingController.getCities);
+router.get(
+  "/cities",
+  auth.verifyToken,
+  auth.isOptional,
+  ShippingController.getCities
+);
 
 // Get Zones inside a particular City
-router.get('/cities/:cityId/zones', ShippingController.getZonesInCity);
+router.get(
+  "/cities/:cityId/zones",
+  auth.verifyToken,
+  auth.isOptional,
+  ShippingController.getZonesInCity
+);
 
 // Get Areas inside a particular Zone
-router.get('/zones/:zoneId/areas', ShippingController.getAreasInZone);
+router.get(
+  "/zones/:zoneId/areas",
+  auth.verifyToken,
+  auth.isOptional,
+  ShippingController.getAreasInZone
+);
 
 // Price Calculation
-router.post('/price-calculation', ShippingController.priceCalculation);
+router.post(
+  "/price-calculation",
+  auth.verifyToken,
+  auth.isOptional,
+  ShippingController.priceCalculation
+);
 
 module.exports = router;

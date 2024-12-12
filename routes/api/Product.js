@@ -1,10 +1,26 @@
 const express = require("express");
 const ProductController = require("../../controllers/Product.js");
 const auth = require("../../middleware/auth.js");
+const {
+  bestSellers,
+  relatedToRecentViewProducts,
+  justForYou,
+  bestSellersInHomeAndDecor,
+  popularProductsInApparel,
+  featureCategories,
+} = require("../../controllers/ProductSection.js");
 
 const router = express.Router();
 
 router.get("/", ProductController.getPublicProducts);
+
+router.get("/best-sellers", bestSellers);
+router.get("/related-recent-view", relatedToRecentViewProducts);
+router.get("/just-for-you", justForYou);
+router.get("/best-seller-home-decor", bestSellersInHomeAndDecor);
+router.get("/popular-apparel", popularProductsInApparel);
+router.get("/featured-categories", featureCategories);
+
 router.get("/s/:slug", ProductController.getProductBySlug);
 router.get("/related/:id", ProductController.getRelatedProducts);
 router.get(

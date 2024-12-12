@@ -20,7 +20,9 @@ const getPublicProducts = async (req, res, next) => {
       page = 1,
       all,
       search,
-      category: categoryName,
+      category: categoryName = "",
+      subCategory: subCategoryName = "",
+      subSubCategory: subSubCategoryName = "",
       limit: limitPerPage = 10,
       minPrice,
       maxPrice,
@@ -35,33 +37,83 @@ const getPublicProducts = async (req, res, next) => {
     if (search) query.name = new RegExp(search, "i");
 
     // Handle category filtering (Batching with Promise.all)
+    let categoryIds = [];
+    let subCategoryIds = [];
     let subSubCategoryIds = [];
     let brandIds = [];
-    if (categoryName && categoryName !== "undefined") {
-      const categoryRegexes = categoryName
-        .split(",")
-        .map((cat) => new RegExp(cat.trim(), "i"));
+    const categoryRegexes = (categoryName || "")
+      .split(",")
+      .map((cat) => new RegExp(cat.trim(), "i"));
+    const subCategoryRegexes = (subCategoryName || "")
+      .split(",")
+      .map((cat) => new RegExp(cat.trim(), "i"));
+    const subSubCategoryRegexes = (subSubCategoryName || "")
+      .split(",")
+      .map((cat) => new RegExp(cat.trim(), "i"));
 
-      const [matchingSubSubCategories, fetchedBrandIds] = await Promise.all([
-        SubSubCategory.find({ name: { $in: categoryRegexes } }).select("_id"),
-        brand.trim() ? Brand.find({ name: { $in: brand.split(",").map((b) => b.trim()) } }).distinct("_id") : []
-      ]);
+    const [
+      matchingCategories,
+      matchingSubCategories,
+      matchingSubSubCategories,
+      fetchedBrandIds,
+    ] = await Promise.all([
+      categoryName.trim()
+        ? Category.find({ name: { $in: categoryRegexes } }).select("_id")
+        : [],
+      subCategoryName.trim()
+        ? SubCategory.find({ name: { $in: subCategoryRegexes } }).select("_id")
+        : [],
+      subSubCategoryName.trim()
+        ? SubSubCategory.find({ name: { $in: subSubCategoryRegexes } }).select(
+            "_id"
+          )
+        : [],
+      brand.trim()
+        ? Brand.find({
+            name: { $in: brand.split(",").map((b) => b.trim()) },
+          }).distinct("_id")
+        : [],
+    ]);
 
-      subSubCategoryIds = matchingSubSubCategories.map((cat) => cat._id);
-      brandIds = fetchedBrandIds;
+    categoryIds = matchingCategories.map(getProductId);
+    subCategoryIds = matchingSubCategories.map(getProductId);
+    subSubCategoryIds = matchingSubSubCategories.map(getProductId);
+    brandIds = fetchedBrandIds;
 
-      if (subSubCategoryIds.length) query.subSubCategory = { $in: subSubCategoryIds };
-      if (brandIds.length) query.brand = { $in: brandIds };
+    if (
+      categoryIds.length ||
+      subCategoryIds.length ||
+      subSubCategoryIds.length ||
+      brandIds.length
+    ) {
+      query.$or = [
+        categoryIds.length && { category: { $in: categoryIds } },
+        subCategoryIds.length && { subCategory: { $in: subCategoryIds } },
+        subSubCategoryIds.length && {
+          subSubCategory: { $in: subSubCategoryIds },
+        },
+        brandIds.length && { brand: { $in: brandIds } },
+      ].filter(Boolean); // Ensures only truthy values are added
     }
 
     // Handle price range filtering
     if (minPrice || maxPrice) {
       const sanitizedMinPrice = getMin0Number(minPrice);
-      const sanitizedMaxPrice = getMin0Number(maxPrice)
+      const sanitizedMaxPrice = getMin0Number(maxPrice);
 
       query.$or = [
-        { "variants.pricing.salePrice": { $gte: sanitizedMinPrice, $lte: sanitizedMaxPrice } },
-        { "pricing.salePrice": { $gte: sanitizedMinPrice, $lte: sanitizedMaxPrice } }
+        {
+          "variants.pricing.salePrice": {
+            $gte: sanitizedMinPrice,
+            $lte: sanitizedMaxPrice,
+          },
+        },
+        {
+          "pricing.salePrice": {
+            $gte: sanitizedMinPrice,
+            $lte: sanitizedMaxPrice,
+          },
+        },
       ];
     }
 
@@ -69,15 +121,39 @@ const getPublicProducts = async (req, res, next) => {
     if (discount && discount === "all") query.discount = { $gt: 0 };
 
     // Sort options
-    const sortOptions = {
-      name: { name: 1 },
-      price: { "variants.pricing.salePrice": 1, "pricing.salePrice": 1 },
-      recent: { publishedAt: -1 }
-    }[sort] || {};
+    const sortOptions =
+      {
+        name: { name: 1 },
+        price: { "variants.pricing.salePrice": 1, "pricing.salePrice": 1 },
+        recent: { publishedAt: -1 },
+      }[sort] || {};
 
     const limit = parseInt(limitPerPage);
     const options = {
-      populate: "subCategory subSubCategory category",
+      populate: [
+        { path: "company", select: "name" },
+        { path: "category", select: "name" },
+        { path: "subCategory", select: "name" },
+        { path: "subSubCategory" },
+      ],
+      select: [
+        "name",
+        "variants",
+        "images",
+        "subCategory",
+        "subSubCategory",
+        "inventory",
+        "pricing",
+        "publishedAt",
+        "isActive",
+        "brand",
+        "sku",
+        "seo.slug",
+        "weight",
+        "weightUnit",
+        "category",
+        "company",
+      ],
       sort: sortOptions,
       page: parseInt(page),
       limit,
@@ -85,15 +161,26 @@ const getPublicProducts = async (req, res, next) => {
     };
 
     if (all) {
-      const products = await Product.find(query).populate("category subCategory subSubCategory");
-      return next(new OkResponse({
-        totalProducts: products.length,
-        products,
-        totalPages: 1,
-        currentPage: 1,
-        hasPrevPage: false,
-        hasNextPage: false,
-      }));
+      const products = await Product.find(query)
+        .populate([
+          { path: "company", select: "name" },
+          { path: "category", select: "name" },
+          { path: "subCategory", select: "name" },
+          { path: "subSubCategory" },
+        ])
+        .select(
+          "name brand sku seo variants weight weightUnit pricing inventory isActive category subCategory subSubCategory company"
+        );
+      return next(
+        new OkResponse({
+          totalProducts: products.length,
+          products,
+          totalPages: 1,
+          currentPage: 1,
+          hasPrevPage: false,
+          hasNextPage: false,
+        })
+      );
     }
 
     const products = await Product.paginate(query, options);
@@ -115,21 +202,22 @@ const getPublicProducts = async (req, res, next) => {
       { $limit: 1 },
     ]).allowDiskUse(true);
 
-    return next(new OkResponse({
-      totalProducts: products.totalDocs,
-      products: products.docs,
-      totalPages: products.totalPages,
-      currentPage: products.page,
-      hasPrevPage: products.hasPrevPage,
-      hasNextPage: products.hasNextPage,
-      maxPriceRange: maxPriceRange[0]?.maxPrice || 0,
-    }));
+    return next(
+      new OkResponse({
+        totalProducts: products.totalDocs,
+        products: products.docs,
+        totalPages: products.totalPages,
+        currentPage: products.page,
+        hasPrevPage: products.hasPrevPage,
+        hasNextPage: products.hasNextPage,
+        maxPriceRange: maxPriceRange[0]?.maxPrice || 0,
+      })
+    );
   } catch (error) {
     console.log(error, "error");
     return next(new BadRequestResponse(error));
   }
 };
-
 
 const getAllProducts = async (req, res, next) => {
   try {

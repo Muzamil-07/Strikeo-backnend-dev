@@ -17,6 +17,7 @@ const {
   orderUpdateStatusForCustomTemplate,
   orderCreateFailedEmailTemplate,
   orderAdminOrderEmailTemplate,
+  customerOrderSummaryEmail,
 } = require("../templates/email");
 
 const Vendor = require("../models/Vendor");
@@ -66,11 +67,15 @@ const generateItemData = (items = [], priceField = "") =>
 
 // Utility: Send email
 const sendMail = async (
-  to,
+  to = "",
   subject,
   html,
   from = `"Strikeo" <${process.env.SMTP_USER}>`
 ) => {
+  if (!to?.trim()) {
+    console.error(`Failed to send email (Terget email not found):`, subject);
+    return;
+  }
   const transporter = setTransporter();
   const msg = { to, from, subject, html };
 
@@ -116,7 +121,11 @@ const sendEmail = async (user, subject, body) => {
   await sendMail(recipient, subject, html);
 };
 
-// Function 2: Confirm order
+// Function 1: CustomerOrders summary
+const customerOrdersSummayMail = async (data, userEmail) => {
+  const html = customerOrderSummaryEmail(data);
+  await sendMail(userEmail, "Orders Summary", html);
+};
 const confirmOrder = async (user, cart, userEmail, shippingCost) => {
   const data = generateItemData(cart.items, "salePrice");
   const html = orderConfirmTemplate(
@@ -282,12 +291,12 @@ const handleOrderErrorsAndNotify = async (email, removedMessages = []) => {
 
   const bodySections = removedMessages.map(
     ({ message, items = [] }) =>
-      `<strong>${message}</strong><br/>${items
+      `<strong>${message}</strong><br/><br/>${items
         ?.map(
           (item, i) =>
-            `${i + 1}. <b>Name:</b>${item?.name} <b>Price:</b>${item?.price}`
+            `(${i + 1}) <b>Name: </b>${item?.name} <b>Price: </b>${item?.price}`
         )
-        .join("<br/>")}`
+        .join("<br/><br/>")}`
   );
   const html = `<p>${bodySections.join("<br/>")}</p>`;
   await sendMail(email, "Update on Your Order", html);
@@ -295,6 +304,7 @@ const handleOrderErrorsAndNotify = async (email, removedMessages = []) => {
 
 module.exports = {
   sendEmail,
+  customerOrdersSummayMail,
   confirmOrder,
   sslczNotification,
   sendContactUsEmail,
@@ -304,4 +314,5 @@ module.exports = {
   customerOrderStatusNotification,
   handleEmailAfterPaymentAndOrderDone,
   orderAdminNotification,
+  generateItemData,
 };

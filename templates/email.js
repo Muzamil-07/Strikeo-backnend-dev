@@ -1482,6 +1482,235 @@ const emailChangeTemplate = (user) => {
 </html>
 `;
 };
+
+const customerOrderSummaryEmail = (summaryData) => {
+  const {
+    totals: {
+      customerBill = 0,
+      shippingCost = 0,
+      promoCodeDiscount = 0,
+      masterTotal = 0,
+      promoCodeName = "N/A",
+    } = null,
+    printableOrders = [],
+  } = summaryData;
+
+  return `<!DOCTYPE html>
+<html
+  lang="en"
+  dir="ltr"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=yes"
+    />
+    <meta
+      name="format-detection"
+      content="telephone=no, date=no, address=no, email=no, url=no"
+    />
+    <meta name="x-apple-disable-message-reformatting" />
+    <style>
+      @import url(https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap);
+
+      :root {
+        font-family: Outfit, Arial, sans-serif;
+        background-color: #eeeeee;
+      }
+    </style>
+  </head>
+
+  <body
+    class="body"
+    style="background-color: #f4f4f4; padding: 0.6rem; margin: 0"
+  >
+    <div
+      role="article"
+      aria-roledescription="email"
+      lang="en"
+      dir="ltr"
+      style="font-size: medium; font-size: max(16px, 1rem)"
+    >
+      <!-- Start of the email content -->
+      <div
+        class="table-wrapper"
+        style="max-width: 600px; margin: 16px auto; padding: 20px"
+      >
+        <table cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td align="left">
+              ${emailTemplateLogo}
+            </td>
+          </tr>
+          <tr style="background-color: #fff">
+            <td>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="start" style="width: 100%">
+                    <div style="border-radius: 24px; padding: 30px 55px">
+                      <h1
+                        style="
+                          font-style: normal;
+                          font-weight: 500;
+                          font-size: 24px;
+                          color: #313d5b;
+                          text-align: center;
+                          letter-spacing: 0.02em;
+                        "
+                      >
+                        Orders Summary
+                      </h1>
+
+                      <!-- Begin order details by company -->
+                      ${printableOrders
+                        .map(
+                          (order) => `
+                        <div style="margin-bottom: 20px;">
+                          <h2
+                            style="
+                              font-size: 18px;
+                              font-weight: bold;
+                              margin-bottom: 10px;
+                              color: #313d5b;
+                            "
+                          >
+                            ${order.companyName}
+                          </h2>
+                          <table
+                            cellpadding="0"
+                            cellspacing="0"
+                            width="100%"
+                            style="margin: 10px 0; border-collapse: collapse; font-size: 12px;"
+                          >
+                            <thead>
+                              <tr>
+                                <th
+                                  style="
+                                    padding: 10px;
+                                    border-bottom: 1px solid #ddd;
+                                    text-align: left;
+                                  "
+                                >
+                                  Item
+                                </th>
+                                <th
+                                  style="
+                                    padding: 10px;
+                                    border-bottom: 1px solid #ddd;
+                                    text-align: center;
+                                  "
+                                >
+                                  Quantity
+                                </th>
+                                <th
+                                  style="
+                                    padding: 10px;
+                                    border-bottom: 1px solid #ddd;
+                                    text-align: right;
+                                  "
+                                >
+                                  Price
+                                </th>
+                                <th
+                                  style="
+                                    padding: 10px;
+                                    border-bottom: 1px solid #ddd;
+                                    text-align: right;
+                                  "
+                                >
+                                  Total Price
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${order.printableItems
+                                .map(
+                                  (item) => `
+                                <tr>
+                                  <td style="padding: 10px 0">
+                                    ${item.item} ${
+                                    item.variant
+                                      ? `(Variant: ${item.variant})`
+                                      : ""
+                                  }
+                                  </td>
+                                  <td style="padding: 10px; text-align: center;">
+                                    ${item.quantity}
+                                  </td>
+                                  <td style="padding: 10px; text-align: right;">
+                                    ${item.price}
+                                  </td>
+                                  <td style="padding: 10px; text-align: right;">
+                                    ${item.totalPrice}
+                                  </td>
+                                </tr>
+                              `
+                                )
+                                .join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      `
+                        )
+                        .join("")}
+                      <!-- End order details by company -->
+
+                      <table
+                        cellpadding="0"
+                        cellspacing="0"
+                        width="100%"
+                        style="margin: 20px 0; border-collapse: collapse; font-size: 12px;"
+                      >
+                        <tbody>
+                          <tr>
+                            <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Total Customer Bill:</td>
+                            <td style="padding: 10px; text-align: right;">Tk. ${customerBill.toLocaleString()}</td>
+                          </tr>
+                          <tr>
+                            <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Shipping Cost:</td>
+                            <td style="padding: 10px; text-align: right;">Tk. ${shippingCost.toLocaleString()}</td>
+                          </tr>
+                          <tr>
+                            <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Promotion Discount:</td>
+                            <td style="padding: 10px; text-align: right;">Tk. -${promoCodeDiscount.toLocaleString()}</td>
+                          </tr>
+                           <tr>
+                            <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Promo Code Name:</td>
+                            <td style="padding: 10px; text-align: right;"> ${promoCodeName}</td>
+                          </tr>
+                          
+                           <tr>
+                            <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Grand Total:</td>
+                            <td style="padding: 10px; text-align: right;">Tk. ${masterTotal.toLocaleString()}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div style="padding: 20px">
+                      ${emailTemplateFooter}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>`;
+};
+
 const orderConfirmTemplate = (data, user, bill, shippingCost) => {
   const totalDiscount = data.reduce(
     (sum, item) => sum + getMin0Number(item.discount),
@@ -3284,6 +3513,7 @@ module.exports = {
   createPasswordTemplate,
   emailChangeTemplate,
   updatePasswordTemplate,
+  customerOrderSummaryEmail,
   orderConfirmTemplate,
   sslCommerzeOrderTemplate,
   contactUsMailTemplate,

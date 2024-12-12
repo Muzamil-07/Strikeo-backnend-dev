@@ -6,7 +6,7 @@ const {
 const PromoCode = require("../../models/PromoCode.js");
 const mongoose = require("mongoose");
 const filterObjectBySchema = require("../../utils/filterObject.js");
-const { getProductId } = require("../../utils/stringsNymber.js");
+const { getProductId, getMin0Number } = require("../../utils/stringsNymber.js");
 const User = require("../../models/User.js");
 
 const promoCodeSchemaFields = {
@@ -292,14 +292,17 @@ const deletePromoCodeById = async (req, res, next) => {
 
 // Validate Promo Code Controller
 const validatePromoCode = async (req, res, next) => {
-  const { code } = req.body;
+  const { id } = req.body;
   const userId = getProductId(req?.user);
-
+  if (!mongoose.isValidObjectId(id)) {
+    return next(new BadRequestResponse("Invalid promo code ID"));
+  }
   try {
     // Find the promo code by the provided code
-    const promoCode = await PromoCode.findOne({ code, isActive: true }).select(
-      "-createdAt -updatedAt -__v"
-    );
+    const promoCode = await PromoCode.findOne({
+      _id: id,
+      isActive: true,
+    }).select("-createdAt -updatedAt -__v");
     if (!promoCode || !promoCode?.expirationDate) {
       return next(
         new BadRequestResponse("Sorry, the promo code is not valid.")
@@ -309,7 +312,14 @@ const validatePromoCode = async (req, res, next) => {
     if (new Date(promoCode?.expirationDate) < new Date()) {
       return next(new BadRequestResponse("Sorry, the promo code has expired."));
     }
-
+    // Validate overall usage limit
+    if (promoCode?.usageCount >= promoCode?.usageLimit) {
+      return next(
+        new BadRequestResponse(
+          "Sorry, this promo code has reached its usage limit."
+        )
+      );
+    }
     // Check if the user has exceeded the usage limit for this promo code
     const userUsage = promoCode.usersRedeemed.find(
       (userRedeemed) => userRedeemed?.user?.toString() === userId.toString()
@@ -327,6 +337,102 @@ const validatePromoCode = async (req, res, next) => {
   } catch (error) {
     console.error(error);
     return next(new BadRequestResponse("Internal server error."));
+  }
+};
+const applyPromoCode = async (req, res, next) => {
+  const { id } = req.body;
+  const userId = getProductId(req?.user);
+
+  if (!mongoose.isValidObjectId(id)) {
+    return next(new BadRequestResponse("Invalid promo code ID"));
+  }
+  if (!mongoose.isValidObjectId(userId)) {
+    return next(
+      new BadRequestResponse(
+        "Oops! We couldn't identify your account. Please try again login."
+      )
+    );
+  }
+
+  try {
+    // Find the promo code by the provided code
+    const promoCode = await PromoCode.findOne({
+      _id: id,
+      isActive: true,
+    }).select("-createdAt -updatedAt -__v");
+
+    if (!promoCode || !promoCode?.expirationDate) {
+      return next(
+        new BadRequestResponse("Sorry, the promo code is not valid.")
+      );
+    }
+
+    if (new Date(promoCode.expirationDate) < new Date()) {
+      return next(new BadRequestResponse("Sorry, the promo code has expired."));
+    }
+
+    // Validate overall usage limit
+    if (
+      getMin0Number(promoCode?.usageCount) >=
+      getMin0Number(promoCode?.usageLimit)
+    ) {
+      return next(
+        new BadRequestResponse(
+          "Sorry, this promo code has reached its usage limit."
+        )
+      );
+    }
+    // Check if the user has exceeded the usage limit for this promo code
+    const userUsage = promoCode?.usersRedeemed?.find(
+      (userRedeemed) => userRedeemed?.user?.toString() === userId.toString()
+    );
+    if (userUsage) {
+      if (
+        getMin0Number(userUsage?.usageCount) >=
+        getMin0Number(promoCode?.perUserLimit)
+      ) {
+        return next(
+          new BadRequestResponse(
+            "You have reached the usage limit for this promo code."
+          )
+        );
+      }
+    }
+    // Update the user's applied promo code
+    const user = req?.user;
+
+    if (!user) {
+      return next(
+        new BadRequestResponse(
+          "We couldn't find your account. Please log in or contact support."
+        )
+      );
+    }
+    if (user?.role?.type !== "User") {
+      return next(
+        new BadRequestResponse(
+          "It looks like your account doesn't have customer access. Please log in with the correct account or contact support for assistance."
+        )
+      );
+    }
+
+    if (!user?.promotions?.promoCodes?.includes(getProductId(promoCode))) {
+      return next(
+        new BadRequestResponse(
+          "This promo code is not yet assigned to your account. Please collect it first and try applying again."
+        )
+      );
+    }
+
+    user.promotions.appliedPromoCode = getProductId(promoCode);
+    await user.save();
+
+    return next(new OkResponse(promoCode, "Promo code applied successfully!"));
+  } catch (error) {
+    console.error(error);
+    return next(
+      new BadRequestResponse(error?.message || "Internal server error.")
+    );
   }
 };
 
@@ -427,6 +533,68 @@ const getCollectedPromoCodesForCustomer = async (req, res, next) => {
     );
   }
 };
+const deleteCollectedPromoCodeForCustomer = async (req, res, next) => {
+  const customerId = getProductId(req?.user);
+  const { id: promoCodeId } = req.params;
+
+  try {
+    if (!mongoose.isValidObjectId(customerId)) {
+      return next(
+        new NotFoundResponse("Please ensure you are logged in and try again.")
+      );
+    }
+
+    if (!mongoose.isValidObjectId(promoCodeId)) {
+      return next(new BadRequestResponse("Invalid promo code ID provided."));
+    }
+
+    // Find the customer
+    const customer = req?.user;
+
+    if (!customer) {
+      return next(
+        new NotFoundResponse(
+          "We couldn't find your account. Please log in and try again."
+        )
+      );
+    }
+
+    // Check if the promo code exists in the user's list
+    const promoCodeIndex = customer?.promotions?.promoCodes?.findIndex(
+      (code) => code.toString() === promoCodeId
+    );
+
+    if (promoCodeIndex === -1) {
+      return next(
+        new NotFoundResponse("Promo code not found in your collected list.")
+      );
+    }
+
+    // Remove the promo code
+    customer.promotions.promoCodes.splice(promoCodeIndex, 1);
+    if (String(customer.promotions?.appliedPromoCode) === String(promoCodeId)) {
+      customer.promotions.appliedPromoCode = null;
+    }
+    // Save the updated user document
+    await customer.save();
+    if (customer?.promotions?.appliedPromoCode)
+      await customer.populate("promotions.appliedPromoCode");
+
+    return next(
+      new OkResponse({
+        message: "Promo code successfully removed.",
+        updatedPromotions: customer.promotions,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return next(
+      new BadRequestResponse(
+        "An error occurred while deleting the promo code. Please try again later."
+      )
+    );
+  }
+};
 
 const PromoCodeController = {
   getAllPromoCodes,
@@ -436,8 +604,10 @@ const PromoCodeController = {
   togglePromoCodeStatus,
   deletePromoCodeById,
   validatePromoCode,
+  applyPromoCode,
   collectPromoCodeForCustomer,
   getCollectedPromoCodesForCustomer,
+  deleteCollectedPromoCodeForCustomer,
   getAvailablePromoCodes,
 };
 

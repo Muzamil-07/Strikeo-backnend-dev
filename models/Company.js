@@ -68,13 +68,13 @@ const CompanySchema = new mongoose.Schema(
 CompanySchema.plugin(uniqueValidator, { message: "is already taken." });
 CompanySchema.plugin(mongoosePaginate);
 
-const autoPopulate = function (next) {
-  this.populate("warehouse", "name location storage isActive");
-  next();
-};
+// const autoPopulate = function (next) {
+//   this.populate("warehouse", "name location storage isActive");
+//   next();
+// };
 
-CompanySchema.pre("findOne", autoPopulate);
-CompanySchema.pre("find", autoPopulate);
+// CompanySchema.pre("findOne", autoPopulate);
+// CompanySchema.pre("find", autoPopulate);
 
 CompanySchema.methods.toJSON = function () {
   return {

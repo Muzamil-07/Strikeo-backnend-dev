@@ -11,8 +11,12 @@ const { default: mongoose } = require("mongoose");
 const Agent = require("../models/Agent.js");
 const { createMessageBody } = require("../utils/message.js");
 
-const { getProductId } = require("../utils/stringsNymber.js");
-const { createSingleOrder, groupItemsByCompany } = require("../utils/Order.js");
+const { getProductId, getMin0Number } = require("../utils/stringsNymber.js");
+const {
+  createSingleOrder,
+  groupItemsByCompany,
+  createOrdersSummary,
+} = require("../utils/Order.js");
 const { cartFormatForSelectedItems } = require("../utils/Cart.js");
 const {
   handleOrderCreateFailedNotify,
@@ -67,7 +71,11 @@ const getOrders = async (req, res, next) => {
         },
         populateOps: [
           { path: "customer", select: "firstName lastName" },
-          { path: "company", select: "warehouse" },
+          {
+            path: "company",
+            select: "warehouse",
+            populate: "warehouse",
+          },
           { path: "agent" },
           { path: "payment", select: "status method" },
         ],
@@ -337,17 +345,31 @@ const getOrderById = async (req, res, next) => {
 
 const createOrder = async (req, res, next) => {
   const validationError = validateAddress(req.body);
-  if (validationError) return next(new BadRequestResponse(validationError));
+  if (validationError) {
+    return next(new BadRequestResponse(validationError));
+  }
 
   const userId = getProductId(req?.user);
-  if (!userId) return next(new BadRequestResponse("User not found"));
+  if (!userId) {
+    return next(
+      new BadRequestResponse("We couldn't find your account. Please try again.")
+    );
+  }
 
   try {
     const cart = await Cart.findOne({ owner: userId });
-    if (!cart) return next(new BadRequestResponse("Cart not found"));
+    if (!cart) {
+      return next(
+        new BadRequestResponse("Your shopping cart is empty or unavailable.")
+      );
+    }
 
     if (cart.items.length === 0) {
-      return next(new BadRequestResponse("Cart is empty"));
+      return next(
+        new BadRequestResponse(
+          "Your cart is currently empty. Please add items to proceed."
+        )
+      );
     }
 
     const { selectedItems = [], selectedPayableAmount } =
@@ -355,32 +377,33 @@ const createOrder = async (req, res, next) => {
 
     if (selectedItems.length === 0) {
       return next(
-        new BadRequestResponse("Selected items not found in your cart")
+        new BadRequestResponse("No selected items were found in your cart.")
       );
     }
+
     if (selectedPayableAmount <= 0) {
       return next(
         new BadRequestResponse(
-          "The payable amount for selected items must be greater than zero."
+          "The total amount for the selected items must be greater than zero."
         )
       );
     }
 
-    // Group items by company using async utility
     const orders = await groupItemsByCompany(selectedItems, req?.user?.email);
-    // Check if there are no orders to process
     if (orders.length === 0) {
-      // Handle the case where no valid items are available
       return next(
         new BadRequestResponse(
-          "No valid items to process. All items were either out of stock or could not be found."
+          "We couldn't process your order. Some items may be out of stock or unavailable."
         )
       );
     }
+
     const completedOrders = [];
     const failedOrders = [];
     let successfullyCreatedItems = [];
     let successfullyCreatedAmount = 0;
+    let totalVendorBill = 0;
+    let totalShippingCost = 0;
 
     for (const orderData of orders) {
       const session = await mongoose.startSession();
@@ -395,15 +418,20 @@ const createOrder = async (req, res, next) => {
           req?.user
         );
 
-        // If order creation was successful
         if (order) {
-          completedOrders.push(orderData);
-
-          // Track successful items and amounts
-          successfullyCreatedItems.push(...orderData.items);
-          successfullyCreatedAmount += orderData.totalAmount;
+          completedOrders.push(order);
+          successfullyCreatedItems.push(...order.items);
+          successfullyCreatedAmount += getMin0Number(order?.customerBill);
+          totalVendorBill += getMin0Number(order?.vendorBill);
+          totalShippingCost += getMin0Number(
+            order?.shippingDetails?.shippingCost
+          );
         } else {
-          failedOrders.push(orderData); // Push failed order data if creation fails
+          console.error(
+            "Order processing failed for the following data:",
+            orderData
+          );
+          failedOrders.push(orderData);
         }
 
         await session.commitTransaction();
@@ -411,55 +439,58 @@ const createOrder = async (req, res, next) => {
         await session.abortTransaction();
 
         orderData.message =
-          "Unfortunately, we are unable to place your order for the following items.";
+          "We couldn't place your order for some items. Please try again later.";
         orderData.failureReason =
-          error?.message || "Service Unable to perform action";
+          error?.message || "We encountered a technical issue.";
         await handleOrderCreateFailedNotify(req?.user?.email, orderData);
-        // Push order data to failed array in case of failure
         failedOrders.push(orderData);
+
         console.log(
-          `Failed to create order for items from company ${orderData?.company}: ${error.message}`
+          `Failed to process order for items from company ${orderData?.company}: ${error.message}`
         );
       } finally {
         session.endSession();
       }
     }
 
-    // After processing all orders, update cart with successfully created orders
     if (successfullyCreatedItems.length > 0) {
       const updatedItems = cart.items.filter((item) => {
-        // Get the ObjectId of the current item
         const itemId = getProductId(item);
-
-        // Check if the item should be removed by looking for a matching ObjectId
         const shouldRemove = successfullyCreatedItems.some((removeItem) => {
           const removeItemId = getProductId(removeItem);
-          // Compare ObjectIds directly
           return itemId === removeItemId;
         });
-
-        // Keep items that are NOT marked for removal
         return !shouldRemove;
       });
 
-      // Update cart items and bill for successful orders
       cart.items = updatedItems;
-      cart.bill = cart.bill - successfullyCreatedAmount;
+      cart.bill -= successfullyCreatedAmount;
       await cart.save();
+
+      await createOrdersSummary(
+        userId,
+        completedOrders,
+        successfullyCreatedAmount,
+        totalVendorBill,
+        totalShippingCost
+      ).catch((err) => {
+        console.error("Error while creating orders summary: ", err);
+      });
     }
 
-    // Send both completed and failed orders in response
     return next(
       new OkResponse({
-        message: "Order processing completed",
-        completedOrders, // Successfully created order IDs
-        failedOrders, // Failed order data
+        message: "Your order has been processed successfully.",
+        completedOrders,
+        failedOrders,
       })
     );
   } catch (error) {
     console.log(error);
     return next(
-      new BadRequestResponse("Failed to place order: " + error.message)
+      new BadRequestResponse(
+        "We encountered an issue while placing your order. Please try again later."
+      )
     );
   }
 };
@@ -470,7 +501,7 @@ const confirmUserOrder = async (req, res, next) => {
   if (!userId || !token || !orderId) {
     console.log("Check failed: Missing required query params.");
     return res.redirect(
-      `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Required+parameters+are+missing.`
+      `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Some important details are missing. Please try again.`
     );
   }
 
@@ -484,28 +515,35 @@ const confirmUserOrder = async (req, res, next) => {
     if (!user) {
       console.log("Check failed: User not found.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Customer+not+found.`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=We couldn't find your account. Please log in and try again.`
       );
     }
 
     if (!order) {
       console.log("Check failed: Order not found.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Order+details+not+found.`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=We couldn't find your order. Please check the order details and try again.`
+      );
+    }
+
+    if (order.isConfirmed) {
+      console.log("Check failed: Order already confirmed.");
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=This order has already been confirmed.`
       );
     }
 
     if (order.confirm_token?.token !== token) {
       console.log("Check failed: Token mismatch.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Invalid+confirmation+token.`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=The confirmation link is invalid. Please use the correct link sent to your email.`
       );
     }
 
     if (order.confirm_token?.expires < Date.now()) {
       console.log("Check failed: Token expired.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=The+confirmation+link+has+expired.`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=The confirmation link has expired. Please request a new confirmation email.`
       );
     }
 
@@ -514,7 +552,7 @@ const confirmUserOrder = async (req, res, next) => {
     if (!vendor) {
       console.log("Check failed: Vendor not found.");
       return res.redirect(
-        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Vendor+details+not+found.`
+        `${process.env.FRONTEND_URL}/checkout/order?success=false&message=We couldn't find the vendor details. Please contact customer support for assistance.`
       );
     }
 
@@ -552,12 +590,12 @@ const confirmUserOrder = async (req, res, next) => {
     const totalBill = customerBill + (shippingDetails?.shippingCost || 0);
 
     return res.redirect(
-      `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${orderNumber}&bill=${totalBill}`
+      `${process.env.FRONTEND_URL}/checkout/order?success=true&order=${orderNumber}&bill=${totalBill}&message=Your order has been confirmed successfully.`
     );
   } catch (error) {
     console.error("Error while confirming order:", error);
     return res.redirect(
-      `${process.env.FRONTEND_URL}/checkout/order?success=false&message=An+unexpected+error+occurred.+Please+try+again+later.`
+      `${process.env.FRONTEND_URL}/checkout/order?success=false&message=Something went wrong. Please try again later.`
     );
   }
 };
@@ -612,7 +650,11 @@ const updateOrder = async (req, res, next) => {
       { new: true }
     ).populate([
       { path: "agent", select: "firstName lastName contact" },
-      { path: "company", select: "warehouse name contact" },
+      {
+        path: "company",
+        select: "warehouse name contact",
+        populate: "warehouse",
+      },
     ]);
 
     const updatedOrder = JSON.parse(JSON.stringify(updatedRes));

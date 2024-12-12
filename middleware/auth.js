@@ -7,6 +7,7 @@ const User = require("../models/User.js");
 const Vendor = require("../models/Vendor.js");
 const Admin = require("../models/StrikeO.js");
 const Agent = require("../models/Agent.js");
+const { getProductId } = require("../utils/stringsNymber.js");
 
 const verifyToken = function (req, res, next) {
   const { authorization } = req.headers;
@@ -17,17 +18,18 @@ const verifyToken = function (req, res, next) {
     const token = authorization.split(" ")[1];
     jwt.verify(token, process.env.SECRET_KEY, async (error, data) => {
       if (error) {
-        return next(new UnauthorizedResponse("Invalid Token"));
+        return next(new UnauthorizedResponse("Invalid or expired token."));
       } else {
-        const user = await User.findById(data.id).populate(
+        const userID = getProductId(data);
+        const user = await User.findById(userID).populate(
           "role activeBillingAddress"
         );
-        const vendor = await Vendor.findById(data.id).populate("role");
-        const admin = await Admin.findById(data.id).populate("role");
-        const agent = await Agent.findById(data.id).populate("role");
+        const vendor = await Vendor.findById(userID).populate("role");
+        const admin = await Admin.findById(userID).populate("role");
+        const agent = await Agent.findById(userID).populate("role");
 
         if (!user && !vendor && !admin && !agent) {
-          return next(new UnauthorizedResponse("Invalid Token"));
+          return next(new UnauthorizedResponse("User authentication failed."));
         } else {
           req.user = user || vendor || admin || agent;
           next();
@@ -35,7 +37,9 @@ const verifyToken = function (req, res, next) {
       }
     });
   } else {
-    next(new BadRequestResponse("Authorization required!"));
+    next(
+      new BadRequestResponse("Authorization header is missing or malformed.")
+    );
   }
 };
 

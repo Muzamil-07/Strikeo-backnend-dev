@@ -13,6 +13,11 @@ const {
   getZonesInCity,
   priceCalculation,
 } = require("./pathaoService");
+const OrdersSummary = require("../models/OrdersSummary");
+const { default: mongoose } = require("mongoose");
+const User = require("../models/User");
+const PromoCode = require("../models/PromoCode");
+const { processOrdersSummaryNotifyForCustomer } = require("./ordersSummary");
 
 const getShippingCost = async (shippingDetails, items) => {
   const { city = "", zone = "" } = shippingDetails;
@@ -96,6 +101,247 @@ const getShippingCost = async (shippingDetails, items) => {
   return (
     getMin0Number(groceryShippingCost) + getMin0Number(nonGroceryShippingCost)
   );
+};
+
+const handleValidateUserUsageLimitForPromoCode = async (
+  userId,
+  appliedPromoCode
+) => {
+  if (!mongoose.isValidObjectId(userId)) {
+    throw new Error("Invalid user ID.");
+  }
+  const usersRedeemed = appliedPromoCode?.usersRedeemed || [];
+  // Find if the user has already redeemed the promo code
+  const userIndex = usersRedeemed.findIndex(
+    (redeem) => redeem?.user.toString() === userId.toString()
+  );
+
+  if (userIndex >= 0) {
+    // User has already redeemed the promo code, increment their usage count
+    if (
+      usersRedeemed[userIndex].usageCount >=
+      getMin0Number(appliedPromoCode.perUserLimit)
+    ) {
+      throw new Error(
+        "User has reached the redemption limit for this promo code."
+      );
+    }
+    usersRedeemed[userIndex].usageCount += 1;
+  } else {
+    // Add new user entry to `usersRedeemed`
+    usersRedeemed.push({ user: userId, usageCount: 1 });
+  }
+  return usersRedeemed;
+};
+
+const validatePromoCode = async (promoCode, cartTotals, userId) => {
+  if (!mongoose.isValidObjectId(userId)) {
+    return {
+      isValid: false,
+      message: "Please Provide valid user ID.",
+      discountAmount: 0,
+    };
+  }
+  const currentDate = new Date();
+
+  // Validate the promo code
+  if (!promoCode) {
+    return {
+      isValid: false,
+      message:
+        "It seems you haven't entered a promo code. Please provide a valid code to enjoy the discount.",
+      discountAmount: 0,
+    };
+  }
+
+  if (!promoCode?.isActive) {
+    return {
+      isValid: false,
+      message:
+        "The promo code you entered is no longer active. Please try another code.",
+      discountAmount: 0,
+    };
+  }
+
+  if (new Date(promoCode?.expirationDate) < currentDate)
+    return {
+      isValid: false,
+      message: "The promo code has expired. Please use a valid code.",
+      discountAmount: 0,
+    };
+
+  // Validate overall usage limit
+  if (
+    getMin0Number(promoCode.usageCount) >= getMin0Number(promoCode.usageLimit)
+  ) {
+    return {
+      isValid: false,
+      message:
+        "This promo code has reached its usage limit. Please try another.",
+      discountAmount: 0,
+    };
+  }
+
+  if (getMin0Number(promoCode?.minimumOrderValue) > getMin0Number(cartTotals))
+    return {
+      isValid: false,
+      message: `Applied promo code requires a minimum order value of ${getMin0Number(
+        promoCode?.minimumOrderValue
+      ).toLocaleString()}, your order is ${getMin0Number(
+        cartTotals
+      ).toLocaleString()}.`,
+      discountAmount: 0,
+    };
+
+  const usersRedeemed = promoCode?.usersRedeemed || [];
+  // Find if the user has already redeemed the promo code
+  const userIndex = usersRedeemed.findIndex(
+    (redeem) => redeem?.user.toString() === userId.toString()
+  );
+
+  if (userIndex >= 0) {
+    // User has already redeemed the promo code, increment their usage count
+    if (
+      usersRedeemed[userIndex].usageCount >=
+      getMin0Number(promoCode?.perUserLimit)
+    ) {
+      return {
+        isValid: false,
+        message: `User has reached the redemption limit for this promo code.`,
+        discountAmount: 0,
+      };
+    }
+  }
+
+  // Calculate the discount amount
+  let discountAmount = 0;
+  if (promoCode?.discountType === "fixed") {
+    discountAmount = getMin0Number(promoCode?.discountValue);
+  } else if (promoCode?.discountType === "percentage") {
+    discountAmount = (
+      (getMin0Number(cartTotals) * getMin0Number(promoCode?.discountValue)) /
+      100
+    ).toFixed(0);
+  }
+
+  // Ensure the discount amount does not exceed the cart total
+  discountAmount = Math.min(discountAmount, getMin0Number(cartTotals));
+
+  return {
+    isValid: true,
+    message: "Promo code applied successfully! Enjoy your discount.",
+    discountAmount,
+  };
+};
+
+const updatePromoCodeUsage = async (userId, appliedPromoCode) => {
+  try {
+    if (!mongoose.isValidObjectId(getProductId(appliedPromoCode))) {
+      throw new Error("Applied Promo code data.");
+    }
+    const usersRedeemed = await handleValidateUserUsageLimitForPromoCode(
+      userId,
+      appliedPromoCode
+    );
+    if (
+      getMin0Number(appliedPromoCode.usageCount) >=
+      getMin0Number(appliedPromoCode.usageLimit)
+    ) {
+      throw new Error("Promo code usage limit exceeded.");
+    }
+    // Increment the overall usage count
+    appliedPromoCode.usageCount += 1;
+
+    // Save the updated promo code
+    await PromoCode.findByIdAndUpdate(getProductId(appliedPromoCode), {
+      ...appliedPromoCode,
+      usersRedeemed,
+    });
+    console.log("Promo code usage updated successfully.");
+    return appliedPromoCode;
+  } catch (error) {
+    // console.error("Error updating promo code usage:", error);
+    throw error;
+  }
+};
+
+const createOrdersSummary = async (
+  customerId = "",
+  completedOrders = [],
+  successfullyCreatedAmount = 0,
+  totalVendorBill = 0,
+  totalShippingCost = 0,
+  appliedPromoCode = null
+) => {
+  try {
+    if (
+      !mongoose.isValidObjectId(customerId) ||
+      !completedOrders?.length ||
+      !getMin0Number(successfullyCreatedAmount)
+    ) {
+      throw new Error("Invalid data provided for creating OrdersSummary.");
+    }
+
+    const findedUser = await User.findById(customerId, {
+      promotions: 1,
+      email: 1,
+      // firstName: 1,
+      // lastName: 1,
+    }).populate("promotions.appliedPromoCode");
+
+    appliedPromoCode = findedUser?.promotions?.appliedPromoCode;
+    // Validate promo code if provided
+    const { isValid, message } = await validatePromoCode(
+      appliedPromoCode,
+      successfullyCreatedAmount + totalShippingCost,
+      customerId
+    ).catch((err) => {
+      console.warn(
+        "Promo code validating failed. Promo code will not be added to the summary.",
+        err
+      );
+    });
+
+    if (!isValid) {
+      console.warn(
+        `Promo code is not valid. Promo code will not be added to the summary. Reason: ${message}`
+      );
+    }
+
+    // Create the summary document
+    const summary = new OrdersSummary({
+      customer: customerId,
+      orders: completedOrders?.map((order) => getProductId(order)),
+      vendorBill: totalVendorBill,
+      customerBill: successfullyCreatedAmount,
+      shippingDetails: { shippingCost: totalShippingCost },
+    });
+
+    if (isValid) {
+      await updatePromoCodeUsage(customerId, appliedPromoCode).catch((err) => {
+        console.warn(
+          "Promo code usage update failed. Promo code will be added to the summary.",
+          err
+        );
+      });
+
+      summary.promotion = { promoCode: appliedPromoCode };
+    }
+
+    await summary.save();
+    await User.updateOne(
+      { _id: customerId },
+      {
+        $set: { "promotions.appliedPromoCode": null },
+        // $pull: { "promotions.promoCodes": getProductId(appliedPromoCode) },
+      }
+    );
+
+    processOrdersSummaryNotifyForCustomer(summary, findedUser?.email);
+    return summary;
+  } catch (error) {
+    console.error("Error creating OrdersSummary:", error);
+  }
 };
 
 const createSingleOrder = async (
@@ -552,7 +798,7 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
   // Check if there are no valid items in any order
   if (validOrders.length === 0) {
     const emailMsg = {
-      message: `Regrettably, there are no valid items remaining in your all orders. All items were either out of stock or could not be found. We appreciate your understanding!`,
+      message: `Regrettably, there are no valid items remaining in your orders. We appreciate your understanding!`,
     };
     console.log(emailMsg);
     removedMessages.push(emailMsg);
@@ -565,6 +811,7 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 };
 
 module.exports = {
+  createOrdersSummary,
   createSingleOrder,
   groupItemsByCompany,
   handleTransactionProcessNotify,

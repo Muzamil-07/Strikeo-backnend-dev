@@ -9,7 +9,7 @@ const {
 } = require("../../utils/mailer");
 const { tranStatusFormat } = require("./initDataProcess");
 const { cartFormatForSelectedItems } = require("../../utils/Cart");
-const { groupItemsByCompany, getShippingCost } = require("../../utils/Order");
+const { groupItemsByCompany, getShippingCost, createOrdersSummary } = require("../../utils/Order");
 const { getProductId } = require("../../utils/stringsNymber");
 
 const handlePaymentFail = async (data, ipn_Payload) => {
@@ -189,6 +189,8 @@ const captureTransaction = async (data, ipn_Payload) => {
   const failedOrders = [];
   let successfullyCreatedItems = [];
   let successfullyCreatedAmount = 0;
+  let totalVendorBill = 0;
+  let totalShippingCost = 0;
   // let successfullyCreatedshippingCost = 0;
 
   // Process grouped orders
@@ -218,10 +220,11 @@ const captureTransaction = async (data, ipn_Payload) => {
       }
       order.statusHistory.set("Processing", new Date());
       await order.save({ session });
-      completedOrders.push(order._id);
-      successfullyCreatedItems.push(...orderData.items); // Track successfully created items
-      successfullyCreatedAmount += orderData.totalAmount; // Accumulate successful order amounts
-      // successfullyCreatedshippingCost += orderData.shippingCost; // Accumulate successful shipping amounts
+      completedOrders.push(order);
+      successfullyCreatedItems.push(...orderData.items);
+      successfullyCreatedAmount += orderData.totalAmount;
+      totalVendorBill += getMin0Number(order?.vendorBill);
+      totalShippingCost += getMin0Number(order?.shippingDetails?.shippingCost);
     } catch (error) {
       orderData.message =
         "Unfortunately, we are unable to place your order for the following items.";
@@ -258,7 +261,15 @@ const captureTransaction = async (data, ipn_Payload) => {
     cart.items = updatedItems;
     cart.bill = cart.bill - successfullyCreatedAmount;
     await cart.save();
-
+    await createOrdersSummary(
+      getProductId(user),
+      completedOrders,
+      successfullyCreatedAmount,
+      totalVendorBill,
+      totalShippingCost
+    ).catch((err) => {
+      console.error("Error while creating orders summary: ", err);
+    });
     // Send email notification
     await sslczNotification(
       {

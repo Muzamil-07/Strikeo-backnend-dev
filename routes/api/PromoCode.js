@@ -11,6 +11,8 @@ const {
   collectPromoCodeForCustomer,
   getCollectedPromoCodesForCustomer,
   getAvailablePromoCodes,
+  deleteCollectedPromoCodeForCustomer,
+  applyPromoCode,
 } = require("../../controllers/PromoCode/PromoCode.js");
 const router = express.Router();
 
@@ -20,14 +22,19 @@ router.get(
   auth.isUser,
   getCollectedPromoCodesForCustomer
 );
-router.get("/apply", auth.verifyToken, auth.isUser, validatePromoCode);
+router.post("/apply", auth.verifyToken, auth.isUser, applyPromoCode);
 router.post(
   "/collect",
   auth.verifyToken,
   auth.isUser,
   collectPromoCodeForCustomer
 );
-
+router.delete(
+  "/remove/:id",
+  auth.verifyToken,
+  auth.isUser,
+  deleteCollectedPromoCodeForCustomer
+);
 // Middleware for verifying token and checking admin roles
 router.use(auth.verifyToken, auth.isAdmin);
 

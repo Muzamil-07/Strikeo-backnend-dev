@@ -42,7 +42,7 @@ CartSchema.plugin(uniqueValidator, { message: "is already taken." });
 const autoPopulate = function (next) {
   this.populate({
     path: "items.product",
-    select: "name brand sku seo variants weight weightUnit pricing inventory isActive category company",
+    select: "name brand sku images seo variants weight weightUnit pricing inventory publishedAt isActive category subCategory subSubCategory company",
     populate: [
       {
         path: "company",

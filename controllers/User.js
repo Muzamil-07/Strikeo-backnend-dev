@@ -27,7 +27,7 @@ const getUser = async (req, res, next) => {
     }
 
     const user = await User.findById(id).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     if (!user) {
@@ -194,7 +194,7 @@ const login = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email }).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     if (!user) {
@@ -467,7 +467,7 @@ const updateBillingAddess = async (req, res, next) => {
 
     await user.save();
     const updatedUser = await User.findById(id).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     return next(
@@ -603,7 +603,7 @@ const googleAuth = async (req, res, next) => {
       if (lastName) user.lastName = lastName;
       await user.save();
       await user.populate(
-        "role cart activeBillingAddress billingAddresses favouriteProducts"
+        "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
       );
       response.user = user.toAuthJSON();
       const responseHTML = htmlPage.replace(
@@ -745,7 +745,7 @@ const facebookAuth = async (req, res, next) => {
       if (lastName) user.lastName = lastName;
       await user.save();
       await user.populate(
-        "role cart activeBillingAddress billingAddresses favouriteProducts"
+        "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
       );
       response.user = user.toAuthJSON();
       const responseHTML = htmlPage.replace(
@@ -860,7 +860,7 @@ const removeFromFavourites = async (req, res, next) => {
 
     await req.user.save();
     await req.user.populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     return next(new OkResponse(req.user));
@@ -998,7 +998,7 @@ const userLogin = async (req, res, next) => {
     user.verify_OTP = null;
     await user.save();
     await user.populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     return next(new OkResponse(user.toAuthJSON()));
@@ -1094,7 +1094,7 @@ const verifyUserOTP = async (req, res, next) => {
     const user = await User.findOne({
       $or: [{ email: contact }, { phone: contact }],
     }).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     if (!user) {
@@ -1170,7 +1170,7 @@ const verifyResetUserPassword = async (req, res, next) => {
     const user = await User.findOne({
       $or: [{ email: contact }, { phone: contact }],
     }).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     if (!user) {
@@ -1211,7 +1211,7 @@ const resetUserPassword = async (req, res, next) => {
     const user = await User.findOne({
       $or: [{ email: contact }, { phone: contact }],
     }).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     if (!user) {
@@ -1246,7 +1246,7 @@ const updateUserProfile = async (req, res, next) => {
 
   try {
     const user = await User.findById(id).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     if (!user) {
@@ -1325,7 +1325,7 @@ const changeBillingAddess = async (req, res, next) => {
     await user.save();
 
     const updatedUser = await User.findById(userId).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
 
     // sendEmail(user, "Strike'O Profile Update", {
@@ -1377,7 +1377,7 @@ const deleteBillingAddress = async (req, res, next) => {
     await user.save();
     await Billing.deleteOne({ _id: id });
     const updatedUser = await User.findById(userId).populate(
-      "role cart activeBillingAddress billingAddresses favouriteProducts"
+      "role cart activeBillingAddress billingAddresses favouriteProducts promotions.appliedPromoCode"
     );
     return next(
       new OkResponse({

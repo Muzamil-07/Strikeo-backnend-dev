@@ -29,6 +29,12 @@ const promoCodeSchema = new mongoose.Schema(
     expirationDate: {
       type: Date,
       required: true,
+      validate: {
+        validator: function (v) {
+          return v > Date.now();
+        },
+        message: "Expiration date must be in the future.",
+      },
       set: (value) => new Date(value).setUTCHours(23, 59, 59, 999),
     },
     currency: { type: String, default: "BDT", enum: ["BDT"], trim: true },
@@ -78,7 +84,8 @@ promoCodeSchema.pre(["save", "updateOne", "findOneAndUpdate"], function (next) {
   const discountValue = this.discountValue || this._update?.discountValue; // Accessing discountValue
   const minimumOrderValue =
     this.minimumOrderValue || this._update?.minimumOrderValue; // Accessing minimumOrderValue
-
+  const usageLimit = this?.usageLimit;
+  const perUserLimit = this?.perUserLimit;
   // Discount validation logic for percentage and fixed
   if (discountType && discountValue !== undefined) {
     if (discountType === "percentage") {
@@ -120,8 +127,20 @@ promoCodeSchema.pre(["save", "updateOne", "findOneAndUpdate"], function (next) {
     }
   }
 
+  // Validation for perUserLimit and usageLimit
+  if (usageLimit !== undefined && perUserLimit !== undefined) {
+    if (perUserLimit >= usageLimit) {
+      return next(
+        new Error(
+          `Per-user limit (${perUserLimit}) must be less than the overall usage limit (${usageLimit}).`
+        )
+      );
+    }
+  }
+
   next();
 });
+
 promoCodeSchema.plugin(mongooseUniqueValidator, {
   message: "is already taken.",
 });
