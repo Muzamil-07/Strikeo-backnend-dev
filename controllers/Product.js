@@ -187,6 +187,7 @@ const getPublicProducts = async (req, res, next) => {
 
     // Optimizing the max price calculation
     const maxPriceRange = await Product.aggregate([
+      { $match: { isActive: true, status: "Published" } },
       {
         $project: {
           maxPrice: {

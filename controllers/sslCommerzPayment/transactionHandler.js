@@ -9,8 +9,12 @@ const {
 } = require("../../utils/mailer");
 const { tranStatusFormat } = require("./initDataProcess");
 const { cartFormatForSelectedItems } = require("../../utils/Cart");
-const { groupItemsByCompany, getShippingCost, createOrdersSummary } = require("../../utils/Order");
-const { getProductId } = require("../../utils/stringsNymber");
+const {
+  groupItemsByCompany,
+  getShippingCost,
+  createOrdersSummary,
+} = require("../../utils/Order");
+const { getProductId, getMin0Number } = require("../../utils/stringsNymber");
 
 const handlePaymentFail = async (data, ipn_Payload) => {
   const payment = await Payment.findOne({
@@ -220,7 +224,7 @@ const captureTransaction = async (data, ipn_Payload) => {
       }
       order.statusHistory.set("Processing", new Date());
       await order.save({ session });
-      completedOrders.push(order);
+      completedOrders.push(getProductId(order));
       successfullyCreatedItems.push(...orderData.items);
       successfullyCreatedAmount += orderData.totalAmount;
       totalVendorBill += getMin0Number(order?.vendorBill);
@@ -259,17 +263,9 @@ const captureTransaction = async (data, ipn_Payload) => {
 
     // Update cart items and bill for successful orders
     cart.items = updatedItems;
-    cart.bill = cart.bill - successfullyCreatedAmount;
+    cart.bill -= successfullyCreatedAmount;
     await cart.save();
-    await createOrdersSummary(
-      getProductId(user),
-      completedOrders,
-      successfullyCreatedAmount,
-      totalVendorBill,
-      totalShippingCost
-    ).catch((err) => {
-      console.error("Error while creating orders summary: ", err);
-    });
+
     // Send email notification
     await sslczNotification(
       {
@@ -287,6 +283,16 @@ const captureTransaction = async (data, ipn_Payload) => {
       },
       user?.email
     );
+
+    await createOrdersSummary(
+      getProductId(user),
+      completedOrders,
+      successfullyCreatedAmount,
+      totalVendorBill,
+      totalShippingCost
+    ).catch((err) => {
+      console.error("Error while creating orders summary: ", err);
+    });
   }
 
   // Commit transaction

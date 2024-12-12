@@ -311,7 +311,7 @@ const createOrdersSummary = async (
     // Create the summary document
     const summary = new OrdersSummary({
       customer: customerId,
-      orders: completedOrders?.map((order) => getProductId(order)),
+      orders: completedOrders,
       vendorBill: totalVendorBill,
       customerBill: successfullyCreatedAmount,
       shippingDetails: { shippingCost: totalShippingCost },

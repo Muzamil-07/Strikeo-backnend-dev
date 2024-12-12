@@ -419,7 +419,7 @@ const createOrder = async (req, res, next) => {
         );
 
         if (order) {
-          completedOrders.push(order);
+          completedOrders.push(getProductId(order));
           successfullyCreatedItems.push(...order.items);
           successfullyCreatedAmount += getMin0Number(order?.customerBill);
           totalVendorBill += getMin0Number(order?.vendorBill);
