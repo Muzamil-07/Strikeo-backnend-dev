@@ -80,12 +80,12 @@ const promoCodeSchema = new mongoose.Schema(
 );
 
 promoCodeSchema.pre(["save", "updateOne", "findOneAndUpdate"], function (next) {
-  const discountType = this.discountType || this._update?.discountType; // Accessing discountType
-  const discountValue = this.discountValue || this._update?.discountValue; // Accessing discountValue
+  const discountType = this.discountType || this._update?.discountType;
+  const discountValue = this.discountValue || this._update?.discountValue;
   const minimumOrderValue =
-    this.minimumOrderValue || this._update?.minimumOrderValue; // Accessing minimumOrderValue
-  const usageLimit = this?.usageLimit;
-  const perUserLimit = this?.perUserLimit;
+    this.minimumOrderValue || this._update?.minimumOrderValue;
+  const usageLimit = this?.usageLimit || this?._update?.usageLimit;
+  const perUserLimit = this?.perUserLimit || this?._update?.perUserLimit;
   // Discount validation logic for percentage and fixed
   if (discountType && discountValue !== undefined) {
     if (discountType === "percentage") {
@@ -129,7 +129,7 @@ promoCodeSchema.pre(["save", "updateOne", "findOneAndUpdate"], function (next) {
 
   // Validation for perUserLimit and usageLimit
   if (usageLimit !== undefined && perUserLimit !== undefined) {
-    if (perUserLimit >= usageLimit) {
+    if (perUserLimit > usageLimit) {
       return next(
         new Error(
           `Per-user limit (${perUserLimit}) must be less than the overall usage limit (${usageLimit}).`

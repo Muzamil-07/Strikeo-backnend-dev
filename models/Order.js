@@ -603,7 +603,6 @@ OrderSchema.index({ company: 1 });
 OrderSchema.methods.toJSON = function () {
   return {
     id: this._id,
-    _id: this._id,
     customer: this.customer,
     company: this.company,
     items: this?.items?.map((item) => {

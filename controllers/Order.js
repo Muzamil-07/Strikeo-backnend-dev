@@ -3,7 +3,6 @@ const validateAddress = require("../utils/AddressValidator.js");
 const Cart = require("../models/Cart.js");
 const User = require("../models/User.js");
 const Product = require("../models/Product.js");
-const Company = require("../models/Company");
 const Order = require("../models/Order.js");
 const Activity = require("../models/Activity.js");
 

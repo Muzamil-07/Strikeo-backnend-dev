@@ -386,9 +386,9 @@ const createSingleOrder = async (
       token,
       link: `${
         process.env.BACKEND_URL
-      }/api/order/confirm?user=${userId}&token=${token}&order=${
-        order?._id || order?.id
-      }`,
+      }/api/order/confirm?user=${userId}&token=${token}&order=${getProductId(
+        order
+      )}`,
       expires: Date.now() + 3600000, // 1 hour
     };
 

@@ -20,7 +20,7 @@ const processOrdersSummaryNotifyForCustomer = async (
     const printableOrders = [];
     for (const order of poplatedOrders) {
       const { items = [] } = order;
-      const printableItems = await generateItemData(items, "salePrice");
+      const printableItems = generateItemData(items, "salePrice");
       printableOrders.push({
         companyName: order?.company?.name || "N/A",
         printableItems,
