@@ -19,6 +19,7 @@ const ChatBotRoute = require("./ChatBot.js");
 const WareHouseRoute = require("./Warehouse.js");
 const PromoCodeRoute = require("./PromoCode.js");
 const DiscountEvent = require("./DiscountEvents.js");
+const HeroSection = require("./HeroSection.js");
 
 const router = express.Router();
 
@@ -42,5 +43,6 @@ router.use("/chatbot", ChatBotRoute);
 router.use("/warehouse", WareHouseRoute);
 router.use("/promoCode", PromoCodeRoute);
 router.use("/discountEvent", DiscountEvent);
+router.use("/hero-section", HeroSection);
 
 module.exports = router;

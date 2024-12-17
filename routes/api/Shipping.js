@@ -4,20 +4,20 @@ const ShippingController = require("../../controllers/Shipping");
 const auth = require("../../middleware/auth");
 
 // Issue an Access Token
-router.post(
-  "/issue-token",
-  auth.verifyToken,
-  auth.isAdmin,
-  ShippingController.issueAccessToken
-);
-``;
-// Issue a Refresh Token
-router.post(
-  "/refresh-token",
-  auth.verifyToken,
-  auth.isAdmin,
-  ShippingController.issueRefreshToken
-);
+// router.post(
+//   "/issue-token",
+//   auth.verifyToken,
+//   auth.isAdmin,
+//   ShippingController.issueAccessToken
+// );
+// ``;
+// // Issue a Refresh Token
+// router.post(
+//   "/refresh-token",
+//   auth.verifyToken,
+//   auth.isAdmin,
+//   ShippingController.issueRefreshToken
+// );
 
 // Create a New Store
 router.post(

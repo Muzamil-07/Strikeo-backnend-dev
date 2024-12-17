@@ -435,6 +435,54 @@ const applyPromoCode = async (req, res, next) => {
     );
   }
 };
+const unapplyPromoCode = async (req, res, next) => {
+  const { id: promoCodeId } = req.body;
+  const userId = getProductId(req?.user);
+
+  if (!mongoose.isValidObjectId(userId)) {
+    return next(
+      new BadRequestResponse(
+        "Oops! We couldn't identify your account. Please try logging in again."
+      )
+    );
+  }
+
+  if (!mongoose.isValidObjectId(promoCodeId)) {
+    return next(new BadRequestResponse("Invalid promo code ID."));
+  }
+
+  try {
+    const user = req?.user;
+
+    if (!user) {
+      return next(
+        new BadRequestResponse(
+          "We couldn't find your account. Please log in or contact support."
+        )
+      );
+    }
+
+    if (user?.role?.type !== "User") {
+      return next(
+        new BadRequestResponse(
+          "It looks like your account doesn't have customer access. Please log in with the correct account or contact support for assistance."
+        )
+      );
+    }
+
+    user.promotions.appliedPromoCode = null;
+    await user.save();
+
+    return next(
+      new OkResponse(user.promotions, "Promo code unapplied successfully!")
+    );
+  } catch (error) {
+    console.error(error);
+    return next(
+      new BadRequestResponse(error?.message || "Internal server error.")
+    );
+  }
+};
 
 const collectPromoCodeForCustomer = async (req, res, next) => {
   const { promoCodeId } = req.body;
@@ -605,6 +653,7 @@ const PromoCodeController = {
   deletePromoCodeById,
   validatePromoCode,
   applyPromoCode,
+  unapplyPromoCode,
   collectPromoCodeForCustomer,
   getCollectedPromoCodesForCustomer,
   deleteCollectedPromoCodeForCustomer,

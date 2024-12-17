@@ -13,6 +13,7 @@ const {
   getAvailablePromoCodes,
   deleteCollectedPromoCodeForCustomer,
   applyPromoCode,
+  unapplyPromoCode,
 } = require("../../controllers/PromoCode/PromoCode.js");
 const router = express.Router();
 
@@ -23,6 +24,8 @@ router.get(
   getCollectedPromoCodesForCustomer
 );
 router.post("/apply", auth.verifyToken, auth.isUser, applyPromoCode);
+router.post("/unapply", auth.verifyToken, auth.isUser, unapplyPromoCode);
+
 router.post(
   "/collect",
   auth.verifyToken,

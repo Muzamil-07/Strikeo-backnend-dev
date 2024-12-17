@@ -5,7 +5,7 @@ const pathaoService = require("../utils/pathaoService");
 async function issueAccessToken(req, res, next) {
   try {
     const response = await pathaoService.issueAccessToken();
-    return next(new OkResponse(response?.data));
+    return next(new OkResponse(response));
   } catch (error) {
     next(
       new BadRequestResponse("Failed to issue access token", {
@@ -20,7 +20,7 @@ async function issueRefreshToken(req, res, next) {
   try {
     const { refresh_token } = req.body;
     const response = await pathaoService.issueRefreshToken(refresh_token);
-    return next(new OkResponse(response?.data));
+    return next(new OkResponse(response));
   } catch (error) {
     next(
       new BadRequestResponse("Failed to refresh token", {

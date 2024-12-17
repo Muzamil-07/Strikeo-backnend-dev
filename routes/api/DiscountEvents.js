@@ -12,7 +12,7 @@ const {
 
 const router = express.Router();
 
-router.get("/pub/events", getPublicDiscountEvents);
+router.get("/pub", getPublicDiscountEvents);
 router.get("/pub/:id", getDiscountEventById);
 // Middleware for verifying token and checking admin roles
 router.use(auth.verifyToken, auth.isAdmin);

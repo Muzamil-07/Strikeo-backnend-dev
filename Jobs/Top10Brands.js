@@ -164,12 +164,8 @@ const scheduleTop10BrandsJob = () => {
     { name: "Update Top 10 Brands for all Sub-SubCategories" }
   );
 
-  const tasks = cron.getTasks();
-
-  // Log task names and calculate next run time
-  tasks.forEach((task, name) => {
-    const taskName = task.options.name;
-    console.log(`Scheduled Task Name: ${taskName}`);
-  });
+  console.log(
+    "Cron job scheduled => Update Top 10 Brands for all Sub-SubCategories"
+  );
 };
 module.exports = scheduleTop10BrandsJob;

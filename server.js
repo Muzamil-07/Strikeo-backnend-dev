@@ -9,6 +9,7 @@ const router = require("./routes/index.js");
 const passport = require("passport");
 const bodyParser = require("body-parser");
 const scheduleTop10BrandsJob = require("./Jobs/Top10Brands.js");
+const schedulePathaoTokenCheckJob = require("./Jobs/PathaoToken/Runner.js");
 
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
@@ -27,6 +28,7 @@ mongoose
   })
   .then(() => {
     scheduleTop10BrandsJob();
+    schedulePathaoTokenCheckJob()
     console.log(
       `Connected to db in ${process.env.NODE_ENV || "development"} environment`
     );
