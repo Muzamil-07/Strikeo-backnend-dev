@@ -75,6 +75,18 @@ const promoCodeSchema = new mongoose.Schema(
         },
       },
     ],
+    excludedCompanies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Company",
+      },
+    ],
+    excludedCategories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+      },
+    ],
   },
   { timestamps: true }
 );

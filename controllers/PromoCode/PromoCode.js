@@ -18,6 +18,8 @@ const promoCodeSchemaFields = {
   usageLimit: true,
   perUserLimit: true,
   minimumOrderValue: true,
+  excludedCompanies: true,
+  excludedCategories: true,
 };
 
 const getAvailablePromoCodes = async (req, res, next) => {

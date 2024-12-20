@@ -18,6 +18,7 @@ const {
   orderCreateFailedEmailTemplate,
   orderAdminOrderEmailTemplate,
   customerOrderSummaryEmail,
+  promoCodeFailedEmailTemplate,
 } = require("../templates/email");
 
 const Vendor = require("../models/Vendor");
@@ -193,6 +194,11 @@ const orderAdminNotification = async (info) => {
 };
 
 // Function 6: Handle order creation failure notification
+const customerOrdersPromoCodeUpdate = async (data, userEmail) => {
+  const html = promoCodeFailedEmailTemplate(data);
+  await sendMail(userEmail, "Orders Promo Code Update", html);
+};
+
 const handleOrderCreateFailedNotify = async (email, removedMessage) => {
   const { failureReason = "N/A", items = [], message = "N/A" } = removedMessage;
 
@@ -305,6 +311,7 @@ const handleOrderErrorsAndNotify = async (email, removedMessages = []) => {
 module.exports = {
   sendEmail,
   customerOrdersSummayMail,
+  customerOrdersPromoCodeUpdate,
   confirmOrder,
   sslczNotification,
   sendContactUsEmail,

@@ -1483,6 +1483,149 @@ const emailChangeTemplate = (user) => {
 `;
 };
 
+const promoCodeFailedEmailTemplate = (data) => {
+  const { promoCodeName = "N/A", failureReason = "N/A" } = data;
+
+  return `<!DOCTYPE html>
+<html
+  lang="en"
+  dir="ltr"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=yes"
+    />
+    <meta
+      name="format-detection"
+      content="telephone=no, date=no, address=no, email=no, url=no"
+    />
+    <meta name="x-apple-disable-message-reformatting" />
+    <style>
+      @import url(https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap);
+
+      :root {
+        font-family: Outfit, Arial, sans-serif;
+        background-color: #eeeeee;
+      }
+    </style>
+  </head>
+
+  <body
+    class="body"
+    style="background-color: #f4f4f4; padding: 0.6rem; margin: 0"
+  >
+    <div
+      role="article"
+      aria-roledescription="email"
+      aria-label="Promo Code Failure"
+      lang="en"
+      dir="ltr"
+      style="font-size: max(16px, 1rem)"
+    >
+      <div
+        class="table-wrapper"
+        style="max-width: 500px; margin: 16px auto; padding: 20px"
+      >
+        <table cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td align="left">
+              ${emailTemplateLogo}
+            </td>
+          </tr>
+          <tr style="background-color: #fff">
+            <td>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="width: 100%">
+                    <div style="border-radius: 24px; padding: 30px">
+                      <h1
+                        style="
+                          font-style: normal;
+                          font-weight: 500;
+                          font-size: 24px;
+                          color: #313d5b;
+                          text-align: center;
+                          letter-spacing: 0.02em;
+                        "
+                      >
+                        Promo Code Failed to Apply
+                      </h1>
+
+                      <p
+                        style="
+                          font-weight: 400;
+                          font-size: 16px;
+                          color: #313d5b;
+                          margin: 20px auto;
+                          text-align: justify;
+                        "
+                      >
+                        We regret to inform you that the promo code <strong>${promoCodeName}</strong> could not be applied to your orders.
+                      </p>
+
+                      <p
+                        style="
+                          font-weight: 400;
+                          font-size: 16px;
+                          color: #313d5b;
+                          margin: 20px auto;
+                          text-align: justify;
+                        "
+                      >
+                        <b>Reason:</b> ${failureReason}
+                      </p>
+
+                      <p
+                        style="
+                          font-weight: 400;
+                          font-size: 16px;
+                          color: #313d5b;
+                          margin: 20px auto;
+                          text-align: justify;
+                        "
+                      >
+                        If you have any questions or need assistance, please do not hesitate to contact our support team.
+                      </p>
+
+                      <div style="text-align: center; margin-top: 40px; margin-bottom: 40px;">
+                        <a
+                          href="mailto:support@strikeo.com"
+                          style="
+                            background-color: #1a4c5f;
+                            border-radius: 16px;
+                            text-decoration: none;
+                            padding: 14px 30px;
+                            color: #fff;
+                          "
+                        >
+                          Contact Support
+                        </a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div style="padding: 20px">
+                      ${emailTemplateFooter}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>`;
+};
 const customerOrderSummaryEmail = (summaryData) => {
   const {
     totals: {
@@ -3514,6 +3657,7 @@ module.exports = {
   emailChangeTemplate,
   updatePasswordTemplate,
   customerOrderSummaryEmail,
+  promoCodeFailedEmailTemplate,
   orderConfirmTemplate,
   sslCommerzeOrderTemplate,
   contactUsMailTemplate,

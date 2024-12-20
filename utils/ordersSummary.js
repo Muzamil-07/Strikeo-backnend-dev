@@ -4,6 +4,7 @@ const { getMin0Number } = require("./stringsNymber");
 
 const processOrdersSummaryNotifyForCustomer = async (
   summaryDoc = null,
+  promoCodeDiscount = 0,
   userEmail = ""
 ) => {
   try {
@@ -32,17 +33,7 @@ const processOrdersSummaryNotifyForCustomer = async (
 
     // Format promotions for summary
     const promoCode = promotion?.promoCode || null;
-    let promoCodeDiscount = 0;
-    if (promoCode) {
-      if (promoCode?.discountType === "fixed") {
-        promoCodeDiscount = promoCode?.discountValue;
-      } else {
-        promoCodeDiscount = (
-          ((totalCustomerBill + totalShippingCost) * promoCode?.discountValue) /
-          100
-        ).toFixed(0);
-      }
-    }
+
     const masterTotal = customerBill + totalShippingCost - promoCodeDiscount;
 
     // Combine data for rendering

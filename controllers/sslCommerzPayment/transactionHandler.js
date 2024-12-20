@@ -190,6 +190,7 @@ const captureTransaction = async (data, ipn_Payload) => {
   }
 
   const completedOrders = [];
+  const completedOrdersData = [];
   const failedOrders = [];
   let successfullyCreatedItems = [];
   let successfullyCreatedAmount = 0;
@@ -225,6 +226,11 @@ const captureTransaction = async (data, ipn_Payload) => {
       order.statusHistory.set("Processing", new Date());
       await order.save({ session });
       completedOrders.push(getProductId(order));
+      completedOrdersData.push({
+        ...order.toObject(),
+        company: orderData?.company,
+        items: orderData?.items,
+      });
       successfullyCreatedItems.push(...orderData.items);
       successfullyCreatedAmount += orderData.totalAmount;
       totalVendorBill += getMin0Number(order?.vendorBill);
@@ -284,13 +290,15 @@ const captureTransaction = async (data, ipn_Payload) => {
       user?.email
     );
 
-    await createOrdersSummary(
-      getProductId(user),
+    await createOrdersSummary({
+      customerId: getProductId(user),
       completedOrders,
       successfullyCreatedAmount,
       totalVendorBill,
-      totalShippingCost
-    ).catch((err) => {
+      totalShippingCost,
+      shippingDetails: activeBillingAddress.toObject(),
+      groupedItems: completedOrdersData,
+    }).catch((err) => {
       console.error("Error while creating orders summary: ", err);
     });
   }

@@ -4,6 +4,7 @@ const {
   confirmOrder,
   handleOrderErrorsAndNotify,
   sslczNotification,
+  customerOrdersPromoCodeUpdate,
 } = require("./mailer");
 const { v4: uuidv4 } = require("uuid");
 const { getProductId, getMin0Number } = require("./stringsNymber");
@@ -65,7 +66,7 @@ const getShippingCost = async (shippingDetails, items) => {
     const itemWeight = weight * quantity;
 
     if (itemWeight > 60) {
-      continue; // Exclude items exceeding 60kg from all calculations
+      continue;
     }
 
     if (item?.product?.category?.name === "Groceries and Food Items") {
@@ -134,7 +135,74 @@ const handleValidateUserUsageLimitForPromoCode = async (
   return usersRedeemed;
 };
 
-const validatePromoCode = async (promoCode, cartTotals, userId) => {
+const calculateExcludedAmount = async ({
+  groupedItems,
+  excludedCompanies = [],
+  excludedCategories = [],
+  shippingDetails,
+}) => {
+  let totalExcludedAmount = 0;
+
+  for (const group of groupedItems) {
+    const companyId = getProductId(group?.company) || group?.company;
+    // Check if the company is excluded
+    if (excludedCompanies?.includes(companyId)) {
+      totalExcludedAmount +=
+        getMin0Number(group?.customerBill) +
+        getMin0Number(group?.shippingDetails?.shippingCost);
+      continue;
+    }
+
+    // Check each item in the group for excluded categories
+    let itemsToExclude = [];
+    let itemsPricesToExclude = 0;
+    console.log(group);
+    for (const item of group.items) {
+      const categoryId =
+        getProductId(item?.product?.category) || item?.product?.category;
+
+      if (excludedCategories?.includes(categoryId)) {
+        console.log("---------------", item);
+        itemsToExclude.push(item);
+        itemsPricesToExclude += getMin0Number(
+          (item?.variantSnapshot
+            ? getMin0Number(item?.variantSnapshot?.pricing?.salePrice) -
+              getMin0Number(item?.variantSnapshot?.pricing?.discount)
+            : getMin0Number(item?.productSnapshot?.pricing?.salePrice) -
+              getMin0Number(item?.productSnapshot?.pricing?.discount)) *
+            getMin0Number(item?.quantity) || 1
+        );
+      }
+    }
+    let shippingCostToExclude = 0;
+    try {
+      // Calculate shipping cost for the group
+      shippingCostToExclude = await getShippingCost(
+        shippingDetails,
+        itemsToExclude
+      );
+    } catch (error) {
+      shippingCostToExclude = 0;
+      console.error(
+        "Error calculating shipping cost for excluding items",
+        "items:",
+        group.items,
+        error
+      );
+      throw error;
+    }
+    totalExcludedAmount += itemsPricesToExclude + shippingCostToExclude;
+    console.log("***********", { itemsPricesToExclude, shippingCostToExclude });
+  }
+  return totalExcludedAmount;
+};
+const validatePromoCode = async ({
+  promoCode = null,
+  cartTotals = 0,
+  userId = "",
+  groupedItems = [],
+  shippingDetails = null,
+}) => {
   if (!mongoose.isValidObjectId(userId)) {
     return {
       isValid: false,
@@ -182,17 +250,6 @@ const validatePromoCode = async (promoCode, cartTotals, userId) => {
     };
   }
 
-  if (getMin0Number(promoCode?.minimumOrderValue) > getMin0Number(cartTotals))
-    return {
-      isValid: false,
-      message: `Applied promo code requires a minimum order value of ${getMin0Number(
-        promoCode?.minimumOrderValue
-      ).toLocaleString()}, your order is ${getMin0Number(
-        cartTotals
-      ).toLocaleString()}.`,
-      discountAmount: 0,
-    };
-
   const usersRedeemed = promoCode?.usersRedeemed || [];
   // Find if the user has already redeemed the promo code
   const userIndex = usersRedeemed.findIndex(
@@ -213,20 +270,65 @@ const validatePromoCode = async (promoCode, cartTotals, userId) => {
     }
   }
 
+  let exculedingAmount = 0;
+  if (
+    (Array.isArray(promoCode?.excludedCompanies) &&
+      promoCode?.excludedCompanies?.length) ||
+    (Array.isArray(promoCode?.excludedCategories) &&
+      promoCode?.excludedCategories?.length)
+  ) {
+    try {
+      exculedingAmount = await calculateExcludedAmount({
+        groupedItems,
+        excludedCompanies: promoCode?.excludedCompanies,
+        excludedCategories: promoCode?.excludedCategories,
+        shippingDetails,
+      });
+    } catch (error) {
+      console.error(
+        "While checking and calculating excluding ammount for promo code minimum spent",
+        error
+      );
+      throw error;
+    }
+  }
+  const finalOrdersTotals = getMin0Number(
+    getMin0Number(cartTotals) - getMin0Number(exculedingAmount)
+  );
+
+  if (getMin0Number(promoCode?.minimumOrderValue) > finalOrdersTotals)
+    return {
+      isValid: false,
+      message: `This promo code requires a minimum spend of ${getMin0Number(
+        promoCode?.minimumOrderValue
+      ).toLocaleString()}. Your order total is currently ${finalOrdersTotals.toLocaleString()}.`,
+      discountAmount: 0,
+    };
+
   // Calculate the discount amount
   let discountAmount = 0;
   if (promoCode?.discountType === "fixed") {
     discountAmount = getMin0Number(promoCode?.discountValue);
   } else if (promoCode?.discountType === "percentage") {
     discountAmount = (
-      (getMin0Number(cartTotals) * getMin0Number(promoCode?.discountValue)) /
+      (getMin0Number(finalOrdersTotals) *
+        getMin0Number(promoCode?.discountValue)) /
       100
     ).toFixed(0);
   }
 
   // Ensure the discount amount does not exceed the cart total
-  discountAmount = Math.min(discountAmount, getMin0Number(cartTotals));
+  discountAmount = Math.min(discountAmount, getMin0Number(finalOrdersTotals));
+  console.log("FFFFFFFFFFFFFF", { discountAmount });
 
+  if (discountAmount >= finalOrdersTotals) {
+    return {
+      isValid: false,
+      message:
+        "This promo code covers the entire cart total. No additional discount can be applied.",
+      discountAmount: 0,
+    };
+  }
   return {
     isValid: true,
     message: "Promo code applied successfully! Enjoy your discount.",
@@ -265,20 +367,27 @@ const updatePromoCodeUsage = async (userId, appliedPromoCode) => {
   }
 };
 
-const createOrdersSummary = async (
+const createOrdersSummary = async ({
   customerId = "",
   completedOrders = [],
   successfullyCreatedAmount = 0,
   totalVendorBill = 0,
   totalShippingCost = 0,
-  appliedPromoCode = null
-) => {
+  appliedPromoCode = null,
+  shippingDetails = null,
+  groupedItems = [],
+}) => {
   try {
     if (
       !mongoose.isValidObjectId(customerId) ||
       !completedOrders?.length ||
       !getMin0Number(successfullyCreatedAmount)
     ) {
+      console.error({
+        customerId,
+        completedOrders,
+        successfullyCreatedAmount,
+      });
       throw new Error("Invalid data provided for creating OrdersSummary.");
     }
 
@@ -290,22 +399,46 @@ const createOrdersSummary = async (
     }).populate("promotions.appliedPromoCode");
 
     appliedPromoCode = findedUser?.promotions?.appliedPromoCode;
-    // Validate promo code if provided
-    const { isValid, message } = await validatePromoCode(
-      appliedPromoCode,
-      successfullyCreatedAmount + totalShippingCost,
-      customerId
-    ).catch((err) => {
-      console.warn(
-        "Promo code validating failed. Promo code will not be added to the summary.",
-        err
-      );
-    });
 
-    if (!isValid) {
-      console.warn(
-        `Promo code is not valid. Promo code will not be added to the summary. Reason: ${message}`
-      );
+    let checkValidPromo = false;
+    let finalPromoDiscountAmount = 0;
+    if (appliedPromoCode) {
+      // Validate promo code if provided
+      const { isValid, message, discountAmount } = await validatePromoCode({
+        promoCode: appliedPromoCode,
+        cartTotals: successfullyCreatedAmount + totalShippingCost,
+        userId: customerId,
+        shippingDetails,
+        groupedItems,
+      }).catch((err) => {
+        console.warn(
+          "Promo code validating failed. Promo code will not be added to the summary.",
+          err
+        );
+        customerOrdersPromoCodeUpdate(
+          {
+            promoCodeName: appliedPromoCode?.name,
+            failureReason: err?.message || message,
+          },
+          findedUser?.email
+        );
+      });
+
+      if (!isValid) {
+        console.warn(
+          `Promo code is not valid. Promo code will not be added to the summary. Reason: ${message}`
+        );
+        customerOrdersPromoCodeUpdate(
+          {
+            promoCodeName: appliedPromoCode?.name,
+            failureReason: message,
+          },
+          findedUser?.email
+        );
+      } else {
+        checkValidPromo = true;
+        finalPromoDiscountAmount = discountAmount;
+      }
     }
 
     // Create the summary document
@@ -317,7 +450,7 @@ const createOrdersSummary = async (
       shippingDetails: { shippingCost: totalShippingCost },
     });
 
-    if (isValid) {
+    if (checkValidPromo) {
       await updatePromoCodeUsage(customerId, appliedPromoCode).catch((err) => {
         console.warn(
           "Promo code usage update failed. Promo code will be added to the summary.",
@@ -337,7 +470,11 @@ const createOrdersSummary = async (
       }
     );
 
-    processOrdersSummaryNotifyForCustomer(summary, findedUser?.email);
+    processOrdersSummaryNotifyForCustomer(
+      summary,
+      finalPromoDiscountAmount,
+      findedUser?.email
+    );
     return summary;
   } catch (error) {
     console.error("Error creating OrdersSummary:", error);
@@ -408,7 +545,11 @@ const createSingleOrder = async (
       shippingCost
     );
 
-    return order;
+    return {
+      ...order.toObject(),
+      company: orderData?.company,
+      items: orderData?.items,
+    };
   } catch (error) {
     console.log(error);
     throw new Error(

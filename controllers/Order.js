@@ -398,6 +398,7 @@ const createOrder = async (req, res, next) => {
     }
 
     const completedOrders = [];
+    const completedOrdersData = [];
     const failedOrders = [];
     let successfullyCreatedItems = [];
     let successfullyCreatedAmount = 0;
@@ -419,6 +420,7 @@ const createOrder = async (req, res, next) => {
 
         if (order) {
           completedOrders.push(getProductId(order));
+          completedOrdersData.push(order);
           successfullyCreatedItems.push(...order.items);
           successfullyCreatedAmount += getMin0Number(order?.customerBill);
           totalVendorBill += getMin0Number(order?.vendorBill);
@@ -466,13 +468,15 @@ const createOrder = async (req, res, next) => {
       cart.bill -= successfullyCreatedAmount;
       await cart.save();
 
-      await createOrdersSummary(
-        userId,
+      await createOrdersSummary({
+        customerId: userId,
         completedOrders,
         successfullyCreatedAmount,
         totalVendorBill,
-        totalShippingCost
-      ).catch((err) => {
+        totalShippingCost,
+        shippingDetails: req.body,
+        groupedItems: completedOrdersData,
+      }).catch((err) => {
         console.error("Error while creating orders summary: ", err);
       });
     }
