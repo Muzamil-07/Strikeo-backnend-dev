@@ -12,7 +12,12 @@ const { default: mongoose } = require("mongoose");
 const { slugify } = require("slugify-unicode");
 const Brand = require("../models/Brand.js");
 const filterObjectBySchema = require("../utils/filterObject.js");
-const { getProductId, getMin0Number } = require("../utils/stringsNymber.js");
+const {
+  getProductId,
+  getMin0Number,
+  getNumber,
+} = require("../utils/stringsNymber.js");
+const { generateEmbedding } = require("../utils/fetch");
 
 const getPublicProducts = async (req, res, next) => {
   try {
@@ -936,6 +941,7 @@ const updateProduct = async (req, res, next) => {
       ],
       status: true,
       isPublished: true,
+      roberta_embedding: true,
     };
 
     const updatePayload = await filterObjectBySchema(req.body, productSchema);
@@ -986,6 +992,17 @@ const updateProduct = async (req, res, next) => {
       product.status = "Published";
       product.publishedAt = new Date();
     }
+
+    const embedding = await generateEmbedding({
+      name: req.body?.name,
+      description: req.body?.description,
+      category: req.body?.category,
+      subCategory: req.body?.subCategory,
+      subSubCategory: req.body?.subSubCategory,
+      slug: product.seo?.slug,
+    });
+
+    product.roberta_embedding = embedding;
 
     await product.save({ validateModifiedOnly: true });
 

@@ -54,6 +54,7 @@ const getShippingCost = async (shippingDetails, items) => {
 
   const pricing = groceryPricing.pricing;
   let totalWeightForAPI = 0;
+  let totalWeightForGrocery = 0;
   let groceryShippingCost = 0;
 
   for (const item of items) {
@@ -70,16 +71,25 @@ const getShippingCost = async (shippingDetails, items) => {
     }
 
     if (item?.product?.category?.name === "Groceries and Food Items") {
-      // Grocery-specific logic
-      const range = pricing.find(
-        (range) => itemWeight >= range.min && itemWeight <= range.max
-      );
+      totalWeightForGrocery += itemWeight;
+      // const range = pricing.find(
+      //   (range) => itemWeight >= range.min && itemWeight <= range.max
+      // );
 
-      groceryShippingCost += getMin0Number(range?.price); // Accumulate grocery shipping cost
+      // groceryShippingCost += getMin0Number(range?.price);
     } else {
       // Non-grocery items: Accumulate weight for API calculation
       totalWeightForAPI += itemWeight;
     }
+  }
+  if (totalWeightForGrocery && totalWeightForGrocery <= 60) {
+    const range = pricing.find(
+      (range) =>
+        totalWeightForGrocery >= range?.min &&
+        totalWeightForGrocery <= range?.max
+    );
+
+    groceryShippingCost = getMin0Number(range?.price);
   }
 
   // Calculate shipping cost for non-grocery items using the API
@@ -156,13 +166,12 @@ const calculateExcludedAmount = async ({
     // Check each item in the group for excluded categories
     let itemsToExclude = [];
     let itemsPricesToExclude = 0;
-    console.log(group);
+
     for (const item of group.items) {
       const categoryId =
         getProductId(item?.product?.category) || item?.product?.category;
 
       if (excludedCategories?.includes(categoryId)) {
-        console.log("---------------", item);
         itemsToExclude.push(item);
         itemsPricesToExclude += getMin0Number(
           (item?.variantSnapshot
@@ -192,7 +201,6 @@ const calculateExcludedAmount = async ({
       throw error;
     }
     totalExcludedAmount += itemsPricesToExclude + shippingCostToExclude;
-    console.log("***********", { itemsPricesToExclude, shippingCostToExclude });
   }
   return totalExcludedAmount;
 };

@@ -3,7 +3,7 @@ const uniqueValidator = require("mongoose-unique-validator");
 const mongoosePaginate = require("mongoose-paginate-v2");
 const AutoIncrement = require("mongoose-sequence")(mongoose);
 const { slugify } = require("slugify-unicode");
-// const { generateEmbedding } = require("../utils/fetch");
+const { generateEmbedding } = require("../utils/fetch");
 
 const validateGreaterThanZero = function (val) {
   return val > 0;
@@ -445,7 +445,7 @@ const ProductSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    embedding: {
+    roberta_embedding: {
       type: [Number],
     },
     status: {
@@ -509,6 +509,16 @@ ProductSchema.post("save", async function (product, next) {
       });
     }
 
+    const embedding = await generateEmbedding({
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      subCategory: product.subCategory,
+      subSubCategory: product.subSubCategory,
+      slug: product.seo.slug,
+    });
+    product.roberta_embedding = embedding;
+
     await product.save();
   }
 
@@ -571,9 +581,6 @@ ProductSchema.pre("save", function (next) {
     }
   }
 
-  // If no validation errors, proceed with saving
-  next();
-
   next();
 });
 
@@ -584,7 +591,7 @@ ProductSchema.plugin(AutoIncrement, {
 ProductSchema.plugin(uniqueValidator, { message: "is already taken." });
 ProductSchema.plugin(mongoosePaginate);
 // Creating an index for 'pricing.salePrice'
-ProductSchema.index({ "publishedAt": 1 });
+ProductSchema.index({ publishedAt: 1 });
 ProductSchema.index({ "pricing.salePrice": 1 });
 
 // Creating a multikey index for 'variants.pricing.salePrice'
@@ -616,7 +623,7 @@ ProductSchema.methods.toJSON = function () {
     averageRating: this.averageRating,
     reviews: this.reviews,
     isActive: this.isActive,
-    // embedding: this.embedding,
+    roberta_embedding: this.roberta_embedding,
     status: this.status,
     publishedAt: this.publishedAt,
     // productSequence: this.productSequence,

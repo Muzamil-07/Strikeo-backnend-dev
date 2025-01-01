@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 const generateEmbedding = async (body) => {
   try {
-    const res = await fetch(`${process.env.EMBEDDING_BASE_URL}/embed-v2/`, {
+    const res = await fetch(`${process.env.EMBEDDING_SEARCH_URL}/embed-v2/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

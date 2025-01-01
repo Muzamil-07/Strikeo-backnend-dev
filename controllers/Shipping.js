@@ -152,7 +152,7 @@ async function priceCalculation(req, res, next) {
     return next(new OkResponse(response?.data));
   } catch (error) {
     next(
-      new BadRequestResponse("Failed to calculate price", {
+      new BadRequestResponse(`Failed to calculate price: ${error?.message}`, {
         details: error,
       })
     );

@@ -12,7 +12,80 @@ const {
 const Product = require("../models/Product.js");
 const { getProductId } = require("../utils/stringsNymber.js");
 
-const getAllCategoriesForUsersOrVendors = async (req, res, next) => {
+const getAllCategoriesForAdminOrVendors = async (req, res, next) => {
+  try {
+    const { name } = req.query;
+    const regex = new RegExp(name, "i");
+    let query = { isActive: true };
+    if (name) {
+      const aggregationPipeline = [
+        {
+          $lookup: {
+            from: "subcategories",
+            localField: "parentSubCategory",
+            foreignField: "_id",
+            as: "parentSubCategoryDoc",
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "parentCategory",
+            foreignField: "_id",
+            as: "parentCategoryDoc",
+          },
+        },
+        {
+          $match: {
+            $or: [
+              { name: regex },
+              { "parentSubCategoryDoc.name": regex },
+              { "parentCategoryDoc.name": regex },
+            ],
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            parentCategoryIds: { $addToSet: "$parentCategory" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            parentCategoryIds: 1,
+          },
+        },
+      ];
+
+      const _categoryIds = await SubSubCategory.aggregate(aggregationPipeline);
+      query = {
+        _id: { $in: _categoryIds },
+        ...query,
+      };
+    }
+
+    const categories = await Category.find(query).populate({
+      path: "subCategories",
+      select: "name id",
+      populate: {
+        path: "subSubCategories",
+        select: "name id",
+      },
+    });
+
+    // Filter categories without any subcategories (if name filtering is applied)
+    const filteredCategories = categories.filter(
+      (category) => category.subCategories.length > 0 || !name
+    );
+
+    return next(new OkResponse(filteredCategories));
+  } catch (error) {
+    console.log(error);
+    return next(new BadRequestResponse("Something went wrong"));
+  }
+};
+const getAllCategoriesForUsers = async (req, res, next) => {
   try {
     let query = { isActive: true };
 
@@ -585,7 +658,8 @@ const deleteCategoryById = async (req, res, next) => {
 };
 
 const OrderController = {
-  getAllCategoriesForUsersOrVendors,
+  getAllCategoriesForAdminOrVendors,
+  getAllCategoriesForUsers,
   getPaginatedCategoriesForSuperAdmin,
   getCategoryById,
   createCategory,

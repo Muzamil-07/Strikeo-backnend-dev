@@ -4,7 +4,13 @@ const auth = require("../../middleware/auth.js");
 
 const router = express.Router();
 
-router.get("/all", CategoryController.getAllCategoriesForUsersOrVendors);
+router.get("/all", CategoryController.getAllCategoriesForUsers);
+router.get(
+  "/auth-all",
+  auth.verifyToken,
+  auth.isAdminOrVendor,
+  CategoryController.getAllCategoriesForAdminOrVendors
+);
 
 router.get("/:id", CategoryController.getCategoryById);
 

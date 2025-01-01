@@ -1818,8 +1818,8 @@ const customerOrderSummaryEmail = (summaryData) => {
                             <td style="padding: 10px; text-align: right;">Tk. ${shippingCost.toLocaleString()}</td>
                           </tr>
                           <tr>
-                            <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Promotion Discount:</td>
-                            <td style="padding: 10px; text-align: right;">Tk. -${promoCodeDiscount.toLocaleString()}</td>
+                            <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Promotion Discount(-):</td>
+                            <td style="padding: 10px; text-align: right;">Tk. ${promoCodeDiscount.toLocaleString()}</td>
                           </tr>
                            <tr>
                             <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Promo Code Name:</td>
