@@ -1,25 +1,22 @@
-const Order = require("../models/Order");
 const { generateItemData, customerOrdersSummayMail } = require("./mailer");
 const { getMin0Number } = require("./stringsNymber");
 
 const processOrdersSummaryNotifyForCustomer = async (
-  summaryDoc = null,
+  summaryDoc = {},
   promoCodeDiscount = 0,
   userEmail = ""
 ) => {
   try {
     // Extract populated orders from the summary document
     const {
-      orders,
+      groupedItems = [],
       customerBill = 0,
-      shippingDetails,
+      shippingDetails = {},
       promotion = null,
     } = summaryDoc;
-    const poplatedOrders = await Order.find({ _id: { $in: orders } })
-      .populate({ path: "company", select: "name" })
-      .allowDiskUse(true);
+
     const printableOrders = [];
-    for (const order of poplatedOrders) {
+    for (const order of groupedItems) {
       const { items = [] } = order;
       const printableItems = generateItemData(items, "salePrice");
       printableOrders.push({

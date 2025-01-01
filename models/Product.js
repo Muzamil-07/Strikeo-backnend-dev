@@ -12,10 +12,10 @@ const validateGreaterThanZero = function (val) {
 const validateArrayLength = function (val) {
   return val.length > 0;
 };
-const validatePositiveNumber = (value) => {
-  value = Number(value);
-  return !isNaN(value) && value >= 0 ? value : 0;
-};
+// const validatePositiveNumber = (value) => {
+//   value = Number(value);
+//   return !isNaN(value) && value >= 0 ? value : 0;
+// };
 // Custom Validator for unique SKU in variants array
 const validateUniqueVariantSKUs = function () {
   const skuSet = new Set();
@@ -84,13 +84,13 @@ const ProductSchema = new mongoose.Schema(
           },
           message: "Product cost price is required if there are no variants.",
         },
-        set: validatePositiveNumber,
+        // set: validatePositiveNumber,
       },
       discount: {
         type: Number,
         min: 0,
         default: 0,
-        set: validatePositiveNumber,
+        // set: validatePositiveNumber,
         validate: [
           {
             validator: function (val) {
@@ -113,11 +113,12 @@ const ProductSchema = new mongoose.Schema(
       taxRate: {
         type: Number,
         default: 0,
+        min: 0,
         set: function (val) {
           if (this.isTaxInclusive) {
             return 0;
           }
-          return validatePositiveNumber(val);
+          return val;
         },
       },
       currency: { type: String, default: "BDT", enum: ["BDT"], trim: true },
@@ -127,12 +128,12 @@ const ProductSchema = new mongoose.Schema(
       },
     },
     inventory: {
-      stock: { type: Number, default: 0, min: 0, set: validatePositiveNumber },
+      stock: { type: Number, default: 0, min: 0 },
       lowStockThreshold: {
         type: Number,
         min: 0,
         default: 0,
-        set: validatePositiveNumber,
+        // set: validatePositiveNumber,
       },
       trackInventory: { type: Boolean, default: true },
       allowBackorders: {
@@ -216,7 +217,7 @@ const ProductSchema = new mongoose.Schema(
     weight: {
       type: Number,
       default: 0,
-
+      min: 0,
       // validate: {
       //   validator: function (val) {
       //     return this.variants.length === 0
@@ -225,13 +226,14 @@ const ProductSchema = new mongoose.Schema(
       //   },
       //   message: "Product weight is required if there are no variants.",
       // },
-      set: validatePositiveNumber,
+      // set: validatePositiveNumber,
     },
     weightUnit: { type: String, default: "kg", enum: ["kg"] },
     dimensions: {
       length: {
         type: Number,
         default: 0,
+        min: 0,
         // validate: {
         //   validator: function (val) {
         //     return this.variants.length === 0
@@ -240,12 +242,12 @@ const ProductSchema = new mongoose.Schema(
         //   },
         //   message: "Product length is required if there are no variants.",
         // },
-        set: validatePositiveNumber,
+        // set: validatePositiveNumber,
       },
       width: {
         type: Number,
         default: 0,
-
+        min: 0,
         // validate: {
         //   validator: function (val) {
         //     return this.variants.length === 0
@@ -254,12 +256,12 @@ const ProductSchema = new mongoose.Schema(
         //   },
         //   message: "Product width is required if there are no variants.",
         // },
-        set: validatePositiveNumber,
+        // set: validatePositiveNumber,
       },
       height: {
         type: Number,
         default: 0,
-
+        min: 0,
         // validate: {
         //   validator: function (val) {
         //     return this.variants.length === 0
@@ -268,7 +270,7 @@ const ProductSchema = new mongoose.Schema(
         //   },
         //   message: "Product height is required if there are no variants.",
         // },
-        set: validatePositiveNumber,
+        // set: validatePositiveNumber,
       },
       unit: { type: String, default: "cm", enum: ["cm"] },
     },
@@ -296,13 +298,13 @@ const ProductSchema = new mongoose.Schema(
               validator: validateGreaterThanZero,
               message: "Variant cost price is required and cannot be zero.",
             },
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
           },
           discount: {
             type: Number,
             min: 0,
             default: 0,
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
             validate: [
               {
                 validator: function (val) {
@@ -328,13 +330,13 @@ const ProductSchema = new mongoose.Schema(
             type: Number,
             default: 0,
             min: 0,
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
           },
           lowStockThreshold: {
             type: Number,
             min: 0,
             default: 0,
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
           },
           trackInventory: { type: Boolean, default: true },
           allowBackorders: {
@@ -361,48 +363,48 @@ const ProductSchema = new mongoose.Schema(
         weight: {
           type: Number,
           default: 0,
-
+          min: 0,
           // required: true,
           // validate: {
           //   validator: validateGreaterThanZero,
           //   message: "Variant weight is required and cannot be zero.",
           // },
-          set: validatePositiveNumber,
+          // set: validatePositiveNumber,
         },
         weightUnit: { type: String, default: "kg", enum: ["kg"] },
         dimensions: {
           length: {
             type: Number,
             default: 0,
-
+            min: 0,
             // required: true,
             // validate: {
             //   validator: validateGreaterThanZero,
             //   message: "Variant length is required and cannot be zero.",
             // },
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
           },
           width: {
             type: Number,
             default: 0,
-
+            min: 0,
             // required: true,
             // validate: {
             //   validator: validateGreaterThanZero,
             //   message: "Variant width is required and cannot be zero.",
             // },
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
           },
           height: {
             type: Number,
             default: 0,
-
+            min: 0,
             // required: true,
             // validate: {
             //   validator: validateGreaterThanZero,
             //   message: "Variant height is required and cannot be zero.",
             // },
-            set: validatePositiveNumber,
+            // set: validatePositiveNumber,
           },
           unit: { type: String, default: "cm", enum: ["cm"] },
         },
@@ -439,7 +441,7 @@ const ProductSchema = new mongoose.Schema(
       min: 0,
       max: 5,
       default: 0,
-      set: validatePositiveNumber,
+      // set: validatePositiveNumber,
     },
     isActive: {
       type: Boolean,
@@ -457,12 +459,14 @@ const ProductSchema = new mongoose.Schema(
     productSequence: {
       type: Number,
       default: 0,
-      set: validatePositiveNumber,
+      min: 0,
+      // set: validatePositiveNumber,
     },
     variantSequence: {
       type: Number,
       default: 0,
-      set: validatePositiveNumber,
+      min: 0,
+      // set: validatePositiveNumber,
     },
   },
   { timestamps: true }

@@ -327,7 +327,6 @@ const validatePromoCode = async ({
 
   // Ensure the discount amount does not exceed the cart total
   discountAmount = Math.min(discountAmount, getMin0Number(finalOrdersTotals));
-  console.log("FFFFFFFFFFFFFF", { discountAmount });
 
   if (discountAmount >= finalOrdersTotals) {
     return {
@@ -470,18 +469,17 @@ const createOrdersSummary = async ({
     }
 
     await summary.save();
+    processOrdersSummaryNotifyForCustomer(
+      { ...summary.toObject(), groupedItems },
+      finalPromoDiscountAmount,
+      findedUser?.email
+    );
     await User.updateOne(
       { _id: customerId },
       {
         $set: { "promotions.appliedPromoCode": null },
         // $pull: { "promotions.promoCodes": getProductId(appliedPromoCode) },
       }
-    );
-
-    processOrdersSummaryNotifyForCustomer(
-      summary,
-      finalPromoDiscountAmount,
-      findedUser?.email
     );
     return summary;
   } catch (error) {
