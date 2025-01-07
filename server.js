@@ -18,6 +18,7 @@ const mongo_uri = isProd
   ? process.env.MONGO_URI_PROD
   : process.env.MONGO_URI_DEV;
 const whitelist = [process.env.BACKEND_URL, process.env.FRONTEND_URL];
+const sslCommerzIPs = ["103.26.139.87", "103.26.139.81", "103.26.139.148"];
 
 mongoose
   .connect(mongo_uri)
@@ -28,7 +29,7 @@ mongoose
   })
   .then(() => {
     scheduleTop10BrandsJob();
-    schedulePathaoTokenCheckJob()
+    schedulePathaoTokenCheckJob();
     console.log(
       `Connected to db in ${process.env.NODE_ENV || "development"} environment`
     );
@@ -51,14 +52,20 @@ app.use(
   })
 );
 
-const corsOptions = {
-  origin: "*",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-  optionsSuccessStatus: 204,
+// Dynamic CORS configuration
+const corsOptionsDelegate = function (req, callback) {
+  const origin = req.header("Origin");
+  const allowedOrigins = [...whitelist, ...sslCommerzIPs];
+  let corsOptions;
+  if (allowedOrigins.includes(origin)) {
+    corsOptions = { origin: true }; // Allow the origin
+  } else {
+    corsOptions = { origin: false }; // Block the origin
+  }
+  callback(null, corsOptions);
 };
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 app.use(router);
 app.use(httpResponse.Middleware);

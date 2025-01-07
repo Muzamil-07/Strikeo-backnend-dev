@@ -8,7 +8,7 @@ const Activity = require("../models/Activity.js");
 
 const { default: mongoose } = require("mongoose");
 const Agent = require("../models/Agent.js");
-const { createMessageBody } = require("../utils/message.js");
+const { createAgentOrderPickupMessage } = require("../utils/message.js");
 
 const { getProductId, getMin0Number } = require("../utils/stringsNymber.js");
 const {
@@ -24,6 +24,7 @@ const {
   orderAdminNotification,
 } = require("../utils/mailer.js");
 const Vendor = require("../models/Vendor.js");
+const { sendTextMessage } = require("../utils/gupshup/index.js");
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioClient = require("twilio")(accountSid, authToken);
@@ -447,7 +448,7 @@ const createOrder = async (req, res, next) => {
         failedOrders.push(orderData);
 
         console.log(
-          `Failed to process order for items from company ${orderData?.company}: ${error.message}`
+          `Failed to process order for items from company ${orderData?.company?.name}: ${error.message}`
         );
       } finally {
         session.endSession();
@@ -675,18 +676,23 @@ const updateOrder = async (req, res, next) => {
       }
 
       try {
-        const messageBody = createMessageBody(updatedOrder, selectedAgent);
-        const message = await twilioClient.messages.create({
-          body: messageBody,
-          from: "whatsapp:" + process.env.TWILIO_PHONE,
-          to: "whatsapp:" + selectedAgent?.contact?.phone,
+        const messageBody = createAgentOrderPickupMessage(
+          updatedOrder,
+          selectedAgent
+        );
+
+        // Send WhatsApp message using Gupshup
+        const response = await sendTextMessage({
+          recipient: selectedAgent?.contact?.phone,
+          text: messageBody,
         });
+
         console.log(
           "Message sent to agent on WhatsApp successfully!",
-          message.apiVersion
+          response
         );
       } catch (error) {
-        console.log(error, "Error in sending agent WhatsApp message!");
+        console.error("Error in sending agent WhatsApp message!", error);
         return next(
           new BadRequestResponse(
             error?.message || "Failed to notify agent. Please try again."

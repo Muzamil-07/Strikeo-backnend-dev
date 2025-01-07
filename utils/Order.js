@@ -566,12 +566,6 @@ const createSingleOrder = async (
   }
 };
 
-const handleOrderUpdateNotify = async (email, removedMessages = []) => {
-  // Check if there are messages to notify
-  if (removedMessages.length > 0) {
-    await handleOrderErrorsAndNotify(email, removedMessages); // Util function to send notifications
-  }
-};
 const handleTransactionProcessNotify = async (
   ipn_Payload = {},
   failureReason
@@ -861,7 +855,7 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
 
       let totalAmount = 0;
       let vendorAmount = 0;
-      const quantity = Math.max(1, getMin0Number(item?.quantity));
+      const quantity = getMin0Number(item?.quantity) || 1;
       if (item?.variantDetails) {
         totalAmount =
           getMin0Number(item?.variantDetails?.pricing?.salePrice) -
@@ -903,7 +897,7 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
       message: `We’re sorry, but the following items were removed from your order because they are currently out of stock:`,
       items: removedItemsOutOfStock,
     };
-    console.log(emailMsg);
+    console.warn(emailMsg);
     removedMessages.push(emailMsg);
   }
   if (inactiveItems.length > 0) {
@@ -911,14 +905,14 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
       message: `The following items are inactive and may not be available for purchase:`,
       items: inactiveItems,
     };
-    console.log(emailMsg);
+    console.warn(emailMsg);
     removedMessages.push(emailMsg);
   }
   if (notFoundCount > 0) {
     const emailMsg = {
       message: `Unfortunately, we were unable to locate ${notFoundCount} item(s) in our inventory. They were not found.`,
     };
-    console.log(emailMsg);
+    console.warn(emailMsg);
     removedMessages.push(emailMsg);
   }
 
@@ -947,13 +941,11 @@ const groupItemsByCompany = async (selectedItems = [], userEmail) => {
     const emailMsg = {
       message: `Regrettably, there are no valid items remaining in your orders. We appreciate your understanding!`,
     };
-    console.log(emailMsg);
+    console.warn(emailMsg);
     removedMessages.push(emailMsg);
   }
 
-  // Notify the customer
-  await handleOrderUpdateNotify(userEmail, removedMessages);
-
+  await handleOrderErrorsAndNotify(userEmail, removedMessages);
   return validOrders; // Return the filtered array of valid orders
 };
 

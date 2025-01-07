@@ -1,6 +1,12 @@
 const { getMin0Number } = require("./stringsNymber");
 
-function createMessageBody(order, agent) {
+/**
+ * Creates a WhatsApp message body for agent order pickup details.
+ * @param {object} order - The order details.
+ * @param {object} agent - The agent details.
+ * @returns {string} - Formatted WhatsApp message.
+ */
+function createAgentOrderPickupMessage(order, agent) {
   const company = order?.company || null;
   const warehouse = company?.warehouse || null;
 
@@ -105,4 +111,36 @@ Best regards,
 _${company?.name || "Company name not available"}`;
 }
 
-exports.createMessageBody = createMessageBody;
+/**
+ * Creates a WhatsApp message body for sending a verification code.
+ * @param {string} code - The verification code to send.
+ * @returns {string} - Formatted verification code message.
+ */
+function createVerificationCodeMessage(code) {
+  if (!code || typeof code !== "string") {
+    throw new Error("Verification code is required and must be a string.");
+  }
+
+  return `*${code}* is your verification code. For your security, do not share this code.`;
+}
+
+/**
+ * Creates a WhatsApp message body for reset password verification.
+ * @param {string} code - The reset password verification code.
+ * @returns {string} - Formatted reset password verification message.
+ */
+function createResetPasswordVerificationMessage(code) {
+  if (!code || typeof code !== "string") {
+    throw new Error(
+      "Reset password verification code is required and must be a string."
+    );
+  }
+
+  return `Your password reset code is *${code}*. Please use this code to reset your password. If you did not request a password reset, please ignore this message.`;
+}
+
+module.exports = {
+  createAgentOrderPickupMessage,
+  createVerificationCodeMessage,
+  createResetPasswordVerificationMessage,
+};

@@ -348,7 +348,7 @@ const emailOTPTemplate = (user, subject) => {
                             line-height: 20px;
                           "
                         >
-                          This code is valid for the next 5 minutes. Please DO NOT
+                          This code is valid for the next 1 minute. Please DO NOT
                           share it with anyone. If you did not request this code,
                           please disregard this message. This is an automated email,
                           so replies will not be received.
@@ -1311,7 +1311,7 @@ const updatePasswordTemplate = (user) => {
                       </p>
                       <div style="text-align: center; margin-bottom: 20px">
                         <a
-                          href="${process.env.FRONTEND_URL}/admin/login"
+                          href="${process.env.BACKEND_URL}/admin/login"
                           style="
                             background-color: #1a4c5f;
                             border-radius: 16px;

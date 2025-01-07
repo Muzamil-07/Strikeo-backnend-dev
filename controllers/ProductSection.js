@@ -374,16 +374,16 @@ const popularProductsInApparel = async (req, res, next) => {
       name: new RegExp("Automotive", "i"),
     });
     const query = {
+      isActive: true,
+      status: "Published",
       $or: [
+        { ...(category && { category: getProductId(category) }) },
         {
           _id: { $in: popularProductIds },
         },
-        { ...(category && { category: getProductId(category) }) },
       ],
       //   _id: { $in: popularProductIds },
       //   ...(category && { category: getProductId(category) }),
-      isActive: true,
-      status: "Published",
     };
 
     const options = {

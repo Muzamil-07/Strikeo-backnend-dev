@@ -14,8 +14,11 @@ const Role = require("../models/Role.js");
 
 const { sendEmail, sendContactUsEmail } = require("../utils/mailer.js");
 const { generateOTPCode } = require("../utils/Auth.js");
-const { sendOtpMessage } = require("../utils/OTPMessage.js");
-const { jsonFormat, getProductId } = require("../utils/stringsNymber.js");
+const {
+  sendOtpResetPaswdMessageViaGupshup,
+  sendVerificationOtpViaGupshup,
+} = require("../utils/OTPMessage.js");
+const { getProductId } = require("../utils/stringsNymber.js");
 const FavouriteProduct = require("../models/FavouriteProduct.js");
 
 const getUser = async (req, res, next) => {
@@ -926,12 +929,12 @@ const userSignup = async (req, res, next) => {
     if (contact?.includes("@")) {
       sendEmail(user, "Account Verification OTP", { emailOTP: true });
     } else {
-      sendOtpMessage(contact, code);
+      sendVerificationOtpViaGupshup(contact, code);
     }
 
     return next(
       new OkResponse(
-        `OTP sent to your ${contact?.includes("@") ? "email" : "phone number"}!`
+        `OTP sent to your ${contact?.includes("@") ? "email" : "whatsapp"}!`
       )
     );
   } catch (error) {
@@ -1070,12 +1073,12 @@ const sendUserOTP = async (req, res, next) => {
     if (contact?.includes("@")) {
       sendEmail(user, "Account Verification OTP", { emailOTP: true });
     } else {
-      sendOtpMessage(contact, code);
+      sendVerificationOtpViaGupshup(contact, code);
     }
 
     return next(
       new OkResponse(
-        `OTP sent to your ${contact?.includes("@") ? "email" : "phone number"}!`
+        `OTP sent to your ${contact?.includes("@") ? "email" : "whatsapp"}!`
       )
     );
   } catch (error) {
@@ -1146,12 +1149,12 @@ const forgotUserPassword = async (req, res, next) => {
     if (contact?.includes("@")) {
       sendEmail(user, "Reset Password OTP", { emailOTP: true });
     } else {
-      sendOtpMessage(contact, code);
+      sendOtpResetPaswdMessageViaGupshup(contact, code);
     }
 
     return next(
       new OkResponse(
-        `OTP sent to your ${contact?.includes("@") ? "email" : "phone number"}!`
+        `OTP sent to your ${contact?.includes("@") ? "email" : "whatsapp"}!`
       )
     );
   } catch (error) {

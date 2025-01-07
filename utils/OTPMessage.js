@@ -1,3 +1,9 @@
+const { sendTextMessage } = require("./gupshup");
+const {
+  createResetPasswordVerificationMessage,
+  createVerificationCodeMessage,
+} = require("./message");
+
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioClient = require("twilio")(accountSid, authToken);
@@ -32,5 +38,42 @@ exports.sendOtpMessage = async (phoneNumber, otp) => {
     } catch (smsError) {
       console.error(smsError, "Failed to send OTP via both WhatsApp and SMS.");
     }
+  }
+};
+
+/**
+ * Sends an OTP via Gupshup's WhatsApp API.
+ * @param {string} phoneNumber - The recipient's phone number in international format.
+ * @param {string} otp - The OTP to send.
+ */
+exports.sendOtpResetPaswdMessageViaGupshup = async (phoneNumber, otp) => {
+  try {
+    const messageBody = createResetPasswordVerificationMessage(otp);
+
+    await sendTextMessage({
+      recipient: phoneNumber,
+      text: messageBody,
+    });
+    console.log("OTP sent successfully via Gupshup WhatsApp!");
+  } catch (error) {
+    console.error("Failed to send OTP via Gupshup WhatsApp:", error);
+    throw new Error("Failed to send OTP via Gupshup WhatsApp.");
+  }
+};
+exports.sendVerificationOtpViaGupshup = async (phoneNumber, otp) => {
+  try {
+    const messageBody = createVerificationCodeMessage(otp);
+
+    await sendTextMessage({
+      recipient: phoneNumber,
+      text: messageBody,
+    });
+    console.log("Verification OTP sent successfully via Gupshup WhatsApp!");
+  } catch (error) {
+    console.error(
+      "Failed to send Verification OTP via Gupshup WhatsApp:",
+      error
+    );
+    throw new Error("Failed to send Verification OTP via Gupshup WhatsApp.");
   }
 };
